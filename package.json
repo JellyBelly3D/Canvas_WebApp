@@ -1,0 +1,8 @@
+{
+  "devDependencies": {
+    "wappsto-cli": "^2.0.10"
+  },
+  "dependencies": {
+    "wappsto-wapp": "^0.17.1"
+  }
+}

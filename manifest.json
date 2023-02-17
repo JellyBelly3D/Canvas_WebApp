@@ -1,0 +1,23 @@
+{
+    "name": "LED Canvas",
+    "author": "Oleksandr B.",
+    "version_app": "0.0.1",
+    "max_number_installation": 1,
+    "supported_features": [
+        "foreground"
+    ],
+    "description": {
+        "general": "",
+        "version": "",
+        "foreground": "",
+        "widget": ""
+    },
+    "permission": {
+        "create": [
+            "data",
+            "stream"
+        ],
+        "permit_to_send_email": false,
+        "permit_to_send_sms": false
+    }
+}
