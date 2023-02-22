@@ -1,6 +1,9 @@
 let boxSize = 10;
 const charWidth = 5;
 const charHeight = 8;
+const screenWidth = 64;
+const screenHeight = 64;
+
 
 const monoCat = new Uint8ClampedArray([
     0x00, 0x00, 0xFE, 0x1F, 0x00, 0x00, 0x00, 0x00, 0x00, 0xC0, 0xFF, 0x7F, 
@@ -61,121 +64,6 @@ const lilIcon = new Uint8ClampedArray([
     0x01, 0x80, 
     0x00, 0x00
 ]);
-
-let displayNetwork;
-let displayDevice;
-let displayMonoBitmapValue;
-let displayRgbBitmapValue;
-let displayTextValue;
-
-async function getValues()
-{
-    displayNetwork = await Wappsto.Network.findByName("Display 64x64");
-    displayDevice = displayNetwork[0].findDeviceByName("Display");
-    displayMonoBitmapValue = displayDevice[0].findValueByName("Mono Bitmap");
-    displayRgbBitmapValue = displayDevice[0].findValueByName("RGB565 Bitmap");
-    displayBrightnessValue = displayDevice[0].findValueByName("Brightness");
-    displayTextValue = displayDevice[0].findValueByName("Text input");
-
-    console.log(displayDevice, 
-                displayBrightnessValue[0].getControlData(),
-                displayTextValue[0].getControlData);
-
-    if(displayDevice[0].isOnline())
-    {
-        console.log("Display is online");
-    }
-}
-
-function setup() 
-{
-    let canvas = createCanvas(640, 640);
-
-    cols = Math.floor(width / boxSize);
-    rows = Math.floor(height / boxSize);
-    grid = new Array(cols);
-  
-    for (let i = 0; i < cols; i++)
-    {
-      grid[i] = new Array(rows);
-    }
-  
-    for (let y = 0; y < cols; y++) 
-    {
-      for (let x = 0; x < rows; x++) 
-      {
-        grid[y][x] = new Pixel(x, y, 51); //Math.floor(Math.random()*255)
-      }
-    }
-    
-    for (let y = 0; y < cols; y++) 
-    {
-      for (let x = 0; x < rows; x++) 
-      {
-         grid[y][x].show();
-      }
-    }
-}
-
-class Pixel {
-    constructor(x, y, c) {
-        this.show = function () {
-            fill(c);
-            stroke(0); //pixel border color
-            rect(x * boxSize, y * boxSize, boxSize, boxSize);
-        };
-    }
-}
-
-function drawPixel(x,y,c)
-{
-    grid[y][x] = new Pixel(x, y, c);
-    grid[y][x].show();
-}
- 
-function drawChar(str, x,y,color) 
-{
-    let index = str.charCodeAt(0);
-    console.log(index);
-
-    for(let i = 0; i < charWidth; i++)
-    {
-        let chr = classicAfafruitFont[index * 5 + i];
-        for(let j = 0; j < charHeight; j++, chr >>= 1)
-        {
-            if(chr & 1)
-            {
-                drawPixel(x+i,y+j, color);
-            }
-        }
-    }
-}
-
-function drawBitmap(x,y,bitmap,w,h,color)
-{
-    const byteWidth = Math.floor((w + 7) / 8);
-    b = new Uint8ClampedArray(bitmap.length);
-    
-    for(let j = 0; j < h; j++, y++)
-    {
-        for(let i = 0; i < w; i++)
-        {
-            if(i & 7)
-            {
-                b >>= 1;
-            }
-            else
-            {  
-                b = bitmap[j * byteWidth + Math.floor(i / 8)];
-            }
-            if(b & 0x01)
-            {
-                drawPixel(x + i, y, color)
-                console.log("x:", x + i, "y:",y, "data:", b.toString(2));
-            }
-        }
-    }
-}
 
 const classicAfafruitFont = [
     0x00, 0x00, 0x00, 0x00, 0x00, 0x3E, 0x5B, 0x4F, 0x5B, 0x3E, 0x3E, 0x6B,
@@ -292,3 +180,168 @@ const classicAfafruitFont = [
     0x01, 0x01, 0x1E, 0x00, 0x19, 0x1D, 0x17, 0x12, 0x00, 0x3C, 0x3C, 0x3C,
     0x3C, 0x00, 0x00, 0x00, 0x00, 0x00 // #255 NBSP
 ];
+
+let displayNetwork;
+let displayDevice;
+let displayMonoBitmapValue;
+let displayRgbBitmapValue;
+let displayTextValue;
+
+async function getValues()
+{
+    displayNetwork = await Wappsto.Network.findByName("Display 64x64");
+    displayDevice = displayNetwork[0].findDeviceByName("Display");
+    displayMonoBitmapValue = displayDevice[0].findValueByName("Mono Bitmap");
+    displayRgbBitmapValue = displayDevice[0].findValueByName("RGB565 Bitmap");
+    displayBrightnessValue = displayDevice[0].findValueByName("Brightness");
+    displayTextValue = displayDevice[0].findValueByName("Text input");
+
+    console.log(displayDevice, 
+                displayBrightnessValue[0].getControlData(),
+                displayTextValue[0].getControlData);
+
+    if(displayDevice[0].isOnline())
+    {
+        console.log("Display is online");
+    }
+}
+
+function setup() 
+{
+    let canvas = createCanvas(640, 640);
+
+    cols = Math.floor(width / boxSize);
+    rows = Math.floor(height / boxSize);
+    grid = new Array(cols);
+  
+    for (let i = 0; i < cols; i++)
+    {
+      grid[i] = new Array(rows);
+    }
+  
+    for (let y = 0; y < cols; y++) 
+    {
+      for (let x = 0; x < rows; x++) 
+      {
+        grid[y][x] = new Pixel(x, y, 51); //Math.floor(Math.random()*255)
+      }
+    }
+    
+    for (let y = 0; y < cols; y++) 
+    {
+      for (let x = 0; x < rows; x++) 
+      {
+         grid[y][x].show();
+      }
+    }
+}
+
+class Pixel {
+    constructor(x, y, c) {
+        this.show = function () {
+            fill(c);
+            stroke(0); //pixel border color
+            rect(x * boxSize, y * boxSize, boxSize, boxSize);
+        };
+    }
+}
+
+function drawPixel(x,y,c)
+{
+    grid[y][x] = new Pixel(x, y, c);
+    grid[y][x].show();
+}
+
+function fillRect(x,y,w,h,c)
+{
+    for(let i = x; i <x+w; i++)
+    {
+        for(let j = y; j <y+h; j++)
+        {
+            drawPixel(i,j,c);
+        }
+    }
+}
+
+function fillScreen(c)
+{
+    fillRect(0,0,screenWidth,screenHeight,c);
+}
+
+function clearScreen()
+{
+    fillRect(0,0,screenWidth,screenHeight,51);
+}
+
+function drawChar(char, x, y, tSize, c) 
+{
+    let index = char.charCodeAt(0);
+    //console.log(index);
+
+    for(let i = 0; i < charWidth; i++)
+    {
+        let chr = classicAfafruitFont[index * 5 + i];
+        for(let j = 0; j < charHeight; j++, chr >>= 1)
+        {
+            if(chr & 1)
+            {
+                if(tSize==1)
+                {
+                    drawPixel(x+i,y+j, c);
+                }
+
+                fillRect(x+(i*tSize),y+(j*tSize), tSize, tSize, c);
+            }
+        }
+    }
+}
+
+function drawText(x,y,text,w,h,tColor,bColor,tSize)
+{
+    let charArray = text.split('');
+    
+    if(w && h)
+    {
+        fillRect(x,y,w,h,bColor);
+    }
+
+    for(let i = 0; i < charArray.length; i++, x+=6 * tSize)
+    {
+        console.log(x);
+        if(x > 1 && x % 60 == 0)//this is really bad, if text start position is != 0 rip
+        {
+            y+=charHeight * tSize;
+            x=0;
+        }
+
+        drawChar(charArray[i],x,y,tSize,tColor);
+    }    
+}
+
+function drawXBitmap(x,y,bitmap,w,h,color)
+{
+    const byteWidth = Math.floor((w + 7) / 8);
+    b = new Uint8ClampedArray(bitmap.length);
+    
+    for(let j = 0; j < h; j++, y++)
+    {
+        for(let i = 0; i < w; i++)
+        {
+            if(i & 7)
+            {
+                b >>= 1;
+            }
+            else
+            {  
+                b = bitmap[j * byteWidth + Math.floor(i / 8)];
+            }
+            if(b & 0x01)
+            {
+                drawPixel(x + i, y, color)
+                console.log("x:", x + i, "y:",y, "data:", b.toString(2));
+            }
+        }
+    }
+}
+
+
