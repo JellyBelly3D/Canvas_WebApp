@@ -4,7 +4,6 @@ const charHeight = 8;
 const screenWidth = 64;
 const screenHeight = 64;
 
-
 const monoCat = new Uint8ClampedArray([
     0x00, 0x00, 0xFE, 0x1F, 0x00, 0x00, 0x00, 0x00, 0x00, 0xC0, 0xFF, 0x7F, 
     0x00, 0x00, 0x00, 0x00, 0x00, 0xF0, 0xFF, 0xFF, 0x01, 0x00, 0x00, 0x00, 
@@ -65,7 +64,7 @@ const lilIcon = new Uint8ClampedArray([
     0x00, 0x00
 ]);
 
-const classicAfafruitFont = [
+const classicAdafruitFont = [
     0x00, 0x00, 0x00, 0x00, 0x00, 0x3E, 0x5B, 0x4F, 0x5B, 0x3E, 0x3E, 0x6B,
     0x4F, 0x6B, 0x3E, 0x1C, 0x3E, 0x7C, 0x3E, 0x1C, 0x18, 0x3C, 0x7E, 0x3C,
     0x18, 0x1C, 0x57, 0x7D, 0x57, 0x1C, 0x1C, 0x5E, 0x7F, 0x5E, 0x1C, 0x00,
@@ -194,16 +193,18 @@ async function getValues()
     displayMonoBitmapValue = displayDevice[0].findValueByName("Mono Bitmap");
     displayRgbBitmapValue = displayDevice[0].findValueByName("RGB565 Bitmap");
     displayBrightnessValue = displayDevice[0].findValueByName("Brightness");
-    displayTextValue = displayDevice[0].findValueByName("Text input");
+    displayTextValue = displayDevice[0].findValueByName("Text input");//await Wappsto.Value.findByName("Text input");
 
-    console.log(displayDevice, 
-                displayBrightnessValue[0].getControlData(),
+    console.log(displayBrightnessValue[0].getControlData(),
                 displayTextValue[0].getControlData);
 
     if(displayDevice[0].isOnline())
     {
         console.log("Display is online");
     }
+
+    //displayTextValue[0].control("lol");
+    //displayBrightnessValue[0].control(100);
 }
 
 function setup() 
@@ -271,6 +272,20 @@ function fillScreen(c)
 function clearScreen()
 {
     fillRect(0,0,screenWidth,screenHeight,51);
+
+    let scrnClr = {
+        x: 0,
+        y: 0,
+        w: screenWidth,
+        h: screenHeight,
+        tColor: "0",
+        bColor: "0",
+        tSize: 1,
+        text: ""
+    }
+
+    console.log(scrnClr);
+    displayTextValue[0].control(JSON.stringify(scrnClr));
 }
 
 function drawChar(char, x, y, tSize, c) 
@@ -280,7 +295,7 @@ function drawChar(char, x, y, tSize, c)
 
     for(let i = 0; i < charWidth; i++)
     {
-        let chr = classicAfafruitFont[index * 5 + i];
+        let chr = classicAdafruitFont[index * 5 + i];
         for(let j = 0; j < charHeight; j++, chr >>= 1)
         {
             if(chr & 1)
@@ -299,26 +314,51 @@ function drawChar(char, x, y, tSize, c)
 function drawText(x,y,text,w,h,tColor,bColor,tSize)
 {
     let charArray = text.split('');
+    let startXPos = x;
+    let lineCharLimit = Math.floor(screenWidth/(charWidth+1));
+    let charCount = Math.floor(startXPos/(charWidth+1));//used for calculating how many chars available on the line
     
     if(w && h)
     {
         fillRect(x,y,w,h,bColor);
+        let lineCharLimit = Math.floor(w/(charWidth+1));
+        let maxCharLimit = Math.floor(lineCharLimit * (h/charHeight));
+        let charCount = 0;//treat as if x start position is 0
+        console.log("max char limit:", maxCharLimit,"line char limit", lineCharLimit);
+        for(let charWritten = 0; charWritten < maxCharLimit; charWritten++, x+=(charWidth+1) * tSize)
+        {
+            if(charCount == lineCharLimit)
+            {
+                y+=charHeight * tSize;
+                x=startXPos;
+                charCount = 0;//Math.floor(startXPos/(charWidth+1));
+                console.log("Shifting y to:",y,"Start position X:", startXPos, "Reserved chars:",charCount);
+            }
+            drawChar(charArray[charWritten],x,y,tSize,tColor);
+            charCount++;
+            console.log("char written:", charWritten);
+        }
+    }
+    else
+    {
+        for(let i = 0; i < charArray.length; i++, x+=(charWidth+1) * tSize)
+        {
+            console.log("pos x:",x);
+            if(charCount == lineCharLimit)
+            {
+                y+=charHeight * tSize;
+                x=startXPos;
+                charCount = Math.floor(startXPos/(charWidth+1));
+                console.log("pos y:",y,"Start X position:", startXPos, "char count:",charCount);
+            }
+            drawChar(charArray[i],x,y,tSize,tColor);
+            charCount++;
+        }
     }
 
-    for(let i = 0; i < charArray.length; i++, x+=6 * tSize)
-    {
-        console.log(x);
-        if(x > 1 && x % 60 == 0)//this is really bad, if text start position is != 0 rip
-        {
-            y+=charHeight * tSize;
-            x=0;
-        }
-
-        drawChar(charArray[i],x,y,tSize,tColor);
-    }    
 }
 
-function drawXBitmap(x,y,bitmap,w,h,color)
+function drawXBitmap(x,y,bitmap,w,h,c)
 {
     const byteWidth = Math.floor((w + 7) / 8);
     b = new Uint8ClampedArray(bitmap.length);
@@ -337,7 +377,7 @@ function drawXBitmap(x,y,bitmap,w,h,color)
             }
             if(b & 0x01)
             {
-                drawPixel(x + i, y, color)
+                drawPixel(x + i, y, c)
                 console.log("x:", x + i, "y:",y, "data:", b.toString(2));
             }
         }
