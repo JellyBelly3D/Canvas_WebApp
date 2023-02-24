@@ -18,6 +18,26 @@
 
     <main class="container" id="midContainer">
       <!-- <canvas id="LED-Screen-Canvas"></canvas> -->
+      <div id="text-area">
+        <textarea id="textInput"></textarea>
+        <label for="xPos">X position (0-63):</label>
+        <input type="number" id="xPos" min="0" max="63" />
+        <label for="yPos">Y position (0-63):</label>
+        <input type="number" id="yPos" min="0" max="63" />
+        <label for="canvasWidth">Width of canvas (0-64):</label>
+        <input type="number" id="canvasWidth" min="0" max="64" />
+        <label for="canvasHeight">Height of canvas (0-64):</label>
+        <input type="number" id="canvasHeight" min="0" max="64" />
+        <label for="textColor">Text color in HEX:</label>
+        <input type="text" id="textColor" />
+        <label for="backgroundColor">Background color in HEX:</label>
+        <input type="text" id="backgroundColor" />
+        <label for="textSize">Text size:</label>
+        <input type="number" id="textSize" min="1" max="20" />
+        <button onclick="sendToScreen(getTextInputElementData())">
+          Send to screen
+        </button>
+      </div>
     </main>
 
     <footer class="container"></footer>

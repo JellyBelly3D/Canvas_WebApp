@@ -5,5 +5,24 @@
 }
 main {
   display: flex;
-  justify-content: center;
+  justify-content: flex-start;
+}
+
+#text-area textarea {
+  flex-grow: 1;
+  align-self: start;
+  height: 25%;
+  /* margin: 10px; */
+}
+#xPos {
+  width: 30%;
+}
+#yPos {
+  width: 30%;
+}
+#canvasWidth {
+  width: 30%;
+}
+#canvasHeight {
+  width: 30%;
 }

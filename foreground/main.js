@@ -186,6 +186,22 @@ let displayMonoBitmapValue;
 let displayRgbBitmapValue;
 let displayTextValue;
 
+const getValue = (id) => document.getElementById(id).value;
+
+const defaultConfig = {
+    x: 0,//getValue("xPos"),
+    y: 0,//getValue("yPos"),
+    w: 0,//getValue("canvasWidth"),
+    h: 0,//getValue("canvasHeight"),
+};
+
+const textInputConfig = {
+    tColor: "0xffff",//getValue("textColor"),
+    bColor: "0",//getValue("backgroundColor"),
+    tSize:  1,//getValue("textSize"),
+    text:   "",//getValue("textInput"),
+}
+
 async function getValues()
 {
     displayNetwork = await Wappsto.Network.findByName("Display 64x64");
@@ -193,18 +209,26 @@ async function getValues()
     displayMonoBitmapValue = displayDevice[0].findValueByName("Mono Bitmap");
     displayRgbBitmapValue = displayDevice[0].findValueByName("RGB565 Bitmap");
     displayBrightnessValue = displayDevice[0].findValueByName("Brightness");
-    displayTextValue = displayDevice[0].findValueByName("Text input");//await Wappsto.Value.findByName("Text input");
+    displayTextValue = displayDevice[0].findValueByName("Text input");
+}
 
-    console.log(displayBrightnessValue[0].getControlData(),
-                displayTextValue[0].getControlData);
+const getTextInputElementData =() =>
+({
+    x: getValue("xPos"),
+    y: getValue("yPos"),
+    w: getValue("canvasWidth"),
+    h: getValue("canvasHeight"),
+    tColor: getValue("textColor"),
+    bColor: getValue("backgroundColor"),
+    tSize: getValue("textSize"),
+    text: getValue("textInput")
+});
 
-    if(displayDevice[0].isOnline())
-    {
-        console.log("Display is online");
-    }
+function sendToScreen()
+{	
+  console.log(JSON.stringify(config));
 
-    //displayTextValue[0].control("lol");
-    //displayBrightnessValue[0].control(100);
+	displayTextValue[0].control(JSON.stringify(getTextInputElementData));
 }
 
 function setup() 
@@ -284,7 +308,6 @@ function clearScreen()
         text: ""
     }
 
-    console.log(scrnClr);
     displayTextValue[0].control(JSON.stringify(scrnClr));
 }
 
@@ -355,7 +378,6 @@ function drawText(x,y,text,w,h,tColor,bColor,tSize)
             charCount++;
         }
     }
-
 }
 
 function drawXBitmap(x,y,bitmap,w,h,c)
@@ -383,5 +405,3 @@ function drawXBitmap(x,y,bitmap,w,h,c)
         }
     }
 }
-
-
