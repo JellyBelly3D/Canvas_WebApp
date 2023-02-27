@@ -188,6 +188,10 @@ let displayTextValue;
 
 const getValue = (id) => document.getElementById(id).value;
 
+//const textPanelForm = document.getElementById('text-panel-form');
+const textPanelForm = document.forms.textPanelForm;
+
+
 const defaultConfig = {
     x: 0,//getValue("xPos"),
     y: 0,//getValue("yPos"),
@@ -202,16 +206,6 @@ const textInputConfig = {
     text:   "",//getValue("textInput"),
 }
 
-async function getValues()
-{
-    displayNetwork = await Wappsto.Network.findByName("Display 64x64");
-    displayDevice = displayNetwork[0].findDeviceByName("Display");
-    displayMonoBitmapValue = displayDevice[0].findValueByName("Mono Bitmap");
-    displayRgbBitmapValue = displayDevice[0].findValueByName("RGB565 Bitmap");
-    displayBrightnessValue = displayDevice[0].findValueByName("Brightness");
-    displayTextValue = displayDevice[0].findValueByName("Text input");
-}
-
 const getTextInputElementData =() =>
 ({
     x: getValue("xPos"),
@@ -224,11 +218,30 @@ const getTextInputElementData =() =>
     text: getValue("textInput")
 });
 
-function sendToScreen()
-{	
-  console.log(JSON.stringify(config));
+async function getValues()
+{
+    displayNetwork = await Wappsto.Network.findByName("Display 64x64");
+    displayDevice = displayNetwork[0].findDeviceByName("Display");
+    displayMonoBitmapValue = displayDevice[0].findValueByName("Mono Bitmap");
+    displayRgbBitmapValue = displayDevice[0].findValueByName("RGB565 Bitmap");
+    displayBrightnessValue = displayDevice[0].findValueByName("Brightness");
+    displayTextValue = displayDevice[0].findValueByName("Text input");
+}
 
-	displayTextValue[0].control(JSON.stringify(getTextInputElementData));
+textPanelForm.addEventListener('formdata', (event) => 
+{
+    console.log("Text Panel change event triggered");
+
+    drawText(getTextInputElementData());
+
+});
+
+
+function sendToScreen()
+{
+  //const form = document.forms.textPanelForm;
+  console.log(getTextInputElementData());
+  displayTextValue[0].control(JSON.stringify(getTextInputElementData()));
 }
 
 function setup() 
@@ -313,6 +326,11 @@ function clearScreen()
 
 function drawChar(char, x, y, tSize, c) 
 {
+    if (char === undefined || char === null) {
+        console.error("Invalid value for 'char' parameter", char);
+        return;
+    }
+    console.log(char);
     let index = char.charCodeAt(0);
     //console.log(index);
 
@@ -334,8 +352,11 @@ function drawChar(char, x, y, tSize, c)
     }
 }
 
-function drawText(x,y,text,w,h,tColor,bColor,tSize)
+function drawText(object)//x,y,text,w,h,tColor,bColor,tSize
 {
+    const {x,y,text,w,h,tColor,bColor,tSize} = object;
+    console.log(x,y,text,w,h,tColor,bColor,tSize);
+    
     let charArray = text.split('');
     let startXPos = x;
     let lineCharLimit = Math.floor(screenWidth/(charWidth+1));
@@ -348,7 +369,7 @@ function drawText(x,y,text,w,h,tColor,bColor,tSize)
         let maxCharLimit = Math.floor(lineCharLimit * (h/charHeight));
         let charCount = 0;//treat as if x start position is 0
         console.log("max char limit:", maxCharLimit,"line char limit", lineCharLimit);
-        for(let charWritten = 0; charWritten < maxCharLimit; charWritten++, x+=(charWidth+1) * tSize)
+        for(let charWritten = 0; charWritten < maxCharLimit && charWritten < charArray.length; charWritten++, x+=(charWidth+1) * tSize)
         {
             if(charCount == lineCharLimit)
             {

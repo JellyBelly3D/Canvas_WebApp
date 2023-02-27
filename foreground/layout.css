@@ -8,13 +8,13 @@ main {
   justify-content: flex-start;
 }
 
-#text-area textarea {
+/* #text-area textarea {
   flex-grow: 1;
   align-self: start;
   height: 25%;
   /* margin: 10px; */
-}
-#xPos {
+/* } */
+/* #xPos {
   width: 30%;
 }
 #yPos {
@@ -25,4 +25,4 @@ main {
 }
 #canvasHeight {
   width: 30%;
-}
+} */ 
