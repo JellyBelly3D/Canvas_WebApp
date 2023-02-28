@@ -16,17 +16,17 @@
       <button onclick="clearScreen()">Clear Screen</button>
     </header>
 
-    <main class="container" id="midContainer">
+    <main class="container-fluid" id="midContainer">
       <!-- <canvas id="LED-Screen-Canvas"></canvas> -->
       <div id="text-area">
-         <form action="" id="text-panel-form" name="textPanelForm" > 
+         <form onsubmit="return false" action="" id="text-panel-form" name="textPanelForm"  > 
           <div>
             <!-- <label for="textInput">Text panel</label> -->
             <textarea id="textInput" name="textInput" placeholder="Text input"></textarea>
           </div>
           <div>
             <label for="xPos">X position (0-63):</label>
-            <input type="number" placeholder="0-63" id="xPos" name="xPos" min="0" max="63" required />
+            <input type="number" placeholder="0-63" id="xPos" name="xPos" min="0" max="63" required/>
             <label for="yPos">Y position (0-63):</label>
             <input type="number" placeholder="0-63" id="yPos" name="yPos" min="0" max="63" required/>
           </div>
@@ -41,8 +41,8 @@
             <input type="text" id="textColor" name="textColor" />
             <label for="backgroundColor">Background color in HEX:</label>
             <input type="text" id="backgroundColor" name="backgroundColor" />
-            <label for="textSize">Text size:</label>
-            <input type="number" id="textSize" name="textSize" min="1" max="20" />
+            <label for="tSize">Text size:</label>
+            <input type="number" id="tSize" name="tSize" min="1" max="20" />
           </div>
           <button onclick="sendToScreen(getTextInputElementData())">
             Send to screen

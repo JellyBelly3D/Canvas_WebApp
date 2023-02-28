@@ -1,4 +1,4 @@
-let boxSize = 10;
+const boxSize = 10;
 const charWidth = 5;
 const charHeight = 8;
 const screenWidth = 64;
@@ -188,9 +188,7 @@ let displayTextValue;
 
 const getValue = (id) => document.getElementById(id).value;
 
-//const textPanelForm = document.getElementById('text-panel-form');
 const textPanelForm = document.forms.textPanelForm;
-
 
 const defaultConfig = {
     x: 0,//getValue("xPos"),
@@ -208,13 +206,13 @@ const textInputConfig = {
 
 const getTextInputElementData =() =>
 ({
-    x: getValue("xPos"),
-    y: getValue("yPos"),
-    w: getValue("canvasWidth"),
-    h: getValue("canvasHeight"),
-    tColor: getValue("textColor"),
-    bColor: getValue("backgroundColor"),
-    tSize: getValue("textSize"),
+    x: parseInt(getValue("xPos")),
+    y: parseInt(getValue("yPos")),
+    w: parseInt(getValue("canvasWidth")),
+    h: parseInt(getValue("canvasHeight")),
+    tColor: parseInt(getValue("textColor")),
+    bColor: parseInt(getValue("backgroundColor")),
+    tSize: parseInt(getValue("tSize")),
     text: getValue("textInput")
 });
 
@@ -228,28 +226,42 @@ async function getValues()
     displayTextValue = displayDevice[0].findValueByName("Text input");
 }
 
-textPanelForm.addEventListener('formdata', (event) => 
+// Preventing textPanelForm from submitting upon 'Enter' keypress
+textPanelForm.addEventListener('keypress', (event) => 
 {
-    console.log("Text Panel change event triggered");
-
-    drawText(getTextInputElementData());
-
+    if (event.keyCode === 13 || event.which === 13) 
+    {
+        const element = event.textInput;
+        if(element.tagName !== 'textInput')
+        {
+            event.preventDefault();
+        }
+    }
 });
 
+textPanelForm.addEventListener('input', (event) => 
+{
+    event.preventDefault();
+    //console.log("Text Panel change event triggered");
+    drawText(getTextInputElementData());
+});
 
 function sendToScreen()
 {
   //const form = document.forms.textPanelForm;
-  console.log(getTextInputElementData());
+  console.log("sendToScreen():",getTextInputElementData());
+  drawText(getTextInputElementData());
   displayTextValue[0].control(JSON.stringify(getTextInputElementData()));
 }
 
 function setup() 
 {
-    let canvas = createCanvas(640, 640);
+    createCanvas(screenWidth * boxSize, screenHeight * boxSize);
+    //background(0);
 
-    cols = Math.floor(width / boxSize);
-    rows = Math.floor(height / boxSize);
+    cols = Math.floor(screenWidth);
+    rows = Math.floor(screenHeight);
+    console.log("sWidth",screenWidth,"sHeigth",screenHeight,"cols:", cols,"rows:",rows);
     grid = new Array(cols);
   
     for (let i = 0; i < cols; i++)
@@ -326,11 +338,12 @@ function clearScreen()
 
 function drawChar(char, x, y, tSize, c) 
 {
+    //console.log("drawChar:", char,x,y,tSize,c);
     if (char === undefined || char === null) {
         console.error("Invalid value for 'char' parameter", char);
         return;
     }
-    console.log(char);
+    
     let index = char.charCodeAt(0);
     //console.log(index);
 
@@ -350,12 +363,13 @@ function drawChar(char, x, y, tSize, c)
             }
         }
     }
+
 }
 
 function drawText(object)//x,y,text,w,h,tColor,bColor,tSize
 {
-    const {x,y,text,w,h,tColor,bColor,tSize} = object;
-    console.log(x,y,text,w,h,tColor,bColor,tSize);
+    let {x=0,y=0,text="",w,h,tColor=255,bColor=51,tSize=1} = object;
+    //console.log("drawText(): ",x,y,text,w,h,tColor,bColor,tSize);
     
     let charArray = text.split('');
     let startXPos = x;
@@ -365,29 +379,43 @@ function drawText(object)//x,y,text,w,h,tColor,bColor,tSize
     if(w && h)
     {
         fillRect(x,y,w,h,bColor);
-        let lineCharLimit = Math.floor(w/(charWidth+1));
-        let maxCharLimit = Math.floor(lineCharLimit * (h/charHeight));
+        let lineCharLimit = Math.floor((w/(charWidth+1))/tSize);
+        let maxCharLimit = lineCharLimit * Math.floor(h / (charHeight * tSize));
         let charCount = 0;//treat as if x start position is 0
         console.log("max char limit:", maxCharLimit,"line char limit", lineCharLimit);
-        for(let charWritten = 0; charWritten < maxCharLimit && charWritten < charArray.length; charWritten++, x+=(charWidth+1) * tSize)
+        for(let charWritten = 0; charWritten < maxCharLimit && charWritten < charArray.length; charWritten++)
         {
             if(charCount == lineCharLimit)
             {
                 y+=charHeight * tSize;
                 x=startXPos;
                 charCount = 0;//Math.floor(startXPos/(charWidth+1));
-                console.log("Shifting y to:",y,"Start position X:", startXPos, "Reserved chars:",charCount);
+                //console.log("Shifting y to:",y,"Start position X:", startXPos, "Reserved chars:",Math.ceil(startXPos/Math.floor((charWidth+1)*tSize)));
             }
-            drawChar(charArray[charWritten],x,y,tSize,tColor);
-            charCount++;
-            console.log("char written:", charWritten);
+            if(charArray[charWritten] == '\n')
+            {
+                y+=charHeight * tSize;
+                x=startXPos;
+                charCount++;
+                maxCharLimit-=(lineCharLimit-charCount);
+                charCount=0;
+                //console.log("Shifting 'y' due to newline char");
+            }
+            if(charArray[charWritten] != '\n')
+            {
+                drawChar(charArray[charWritten],x,y,tSize,tColor);
+                charCount++;
+                //console.log("char written:", charWritten+1);
+                x+=(charWidth+1) * tSize;
+            }
+            console.log("x",x,"y:",y,"Start position X:", startXPos,"Max char limit:",maxCharLimit,"Char written:", charWritten);
         }
     }
     else
     {
         for(let i = 0; i < charArray.length; i++, x+=(charWidth+1) * tSize)
         {
-            console.log("pos x:",x);
+            //console.log("pos x:",x);
             if(charCount == lineCharLimit)
             {
                 y+=charHeight * tSize;
