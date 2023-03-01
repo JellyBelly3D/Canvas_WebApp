@@ -19,30 +19,34 @@
     <main class="container-fluid" id="midContainer">
       <!-- <canvas id="LED-Screen-Canvas"></canvas> -->
       <div id="text-area">
-         <form onsubmit="return false" action="" id="text-panel-form" name="textPanelForm"  > 
+         <form onsubmit="return false" action="" id="textPanelForm" name="textPanelForm"  > 
           <div>
             <!-- <label for="textInput">Text panel</label> -->
             <textarea id="textInput" name="textInput" placeholder="Text input"></textarea>
           </div>
-          <div>
-            <label for="xPos">X position (0-63):</label>
-            <input type="number" placeholder="0-63" id="xPos" name="xPos" min="0" max="63" required/>
-            <label for="yPos">Y position (0-63):</label>
-            <input type="number" placeholder="0-63" id="yPos" name="yPos" min="0" max="63" required/>
+          <div class="grid">
+            <label for="xPos">x pos (0-63):
+              <input type="number" placeholder="0-63" id="xPos" name="xPos" min="0" max="63" value="0"/>
+            </label>
+            <label for="yPos">y pos (0-63):
+              <input type="number" placeholder="0-63" id="yPos" name="yPos" min="0" max="63" value="0"/>
+            </label>
           </div>
-          <div>
-            <label for="canvasWidth">Width of canvas (1-64):</label>
-            <input type="number" id="canvasWidth" name="canvasWidth" min="0" max="64" />
-            <label for="canvasHeight">Height of canvas (1-64):</label>
-            <input type="number" id="canvasHeight" name="canvasHeight" min="0" max="64" />
+          <div class="grid">
+            <label for="canvasWidth">Canvas width (1-64):
+              <input type="number" id="canvasWidth" name="canvasWidth" min="0" max="64" value="64"/>
+            </label>
+            <label for="canvasHeight">Canvas height (1-64):
+              <input type="number" id="canvasHeight" name="canvasHeight" min="0" max="64" value="64"/>
+            </label>
           </div>
           <div>
             <label for="textColor">Text color in HEX:</label>
-            <input type="text" id="textColor" name="textColor" />
+            <input type="color" id="textColor" name="textColor" value="#FFFFFF" />
             <label for="backgroundColor">Background color in HEX:</label>
-            <input type="text" id="backgroundColor" name="backgroundColor" />
+            <input type="color" id="backgroundColor" name="backgroundColor" value="#454545"/>
             <label for="tSize">Text size:</label>
-            <input type="number" id="tSize" name="tSize" min="1" max="20" />
+            <input type="number" id="tSize" name="tSize" min="1" max="20" value="1"/>
           </div>
           <button onclick="sendToScreen(getTextInputElementData())">
             Send to screen

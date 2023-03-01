@@ -188,7 +188,7 @@ let displayTextValue;
 
 const getValue = (id) => document.getElementById(id).value;
 
-const textPanelForm = document.forms.textPanelForm;
+const textPanelForm = document.getElementById('textPanelForm');
 
 const defaultConfig = {
     x: 0,//getValue("xPos"),
@@ -210,8 +210,8 @@ const getTextInputElementData =() =>
     y: parseInt(getValue("yPos")),
     w: parseInt(getValue("canvasWidth")),
     h: parseInt(getValue("canvasHeight")),
-    tColor: parseInt(getValue("textColor")),
-    bColor: parseInt(getValue("backgroundColor")),
+    tColor: getValue("textColor"),
+    bColor: getValue("backgroundColor"),
     tSize: parseInt(getValue("tSize")),
     text: getValue("textInput")
 });
@@ -227,31 +227,57 @@ async function getValues()
 }
 
 // Preventing textPanelForm from submitting upon 'Enter' keypress
-textPanelForm.addEventListener('keypress', (event) => 
+textPanelForm.addEventListener('keydown', (event) => 
 {
-    if (event.keyCode === 13 || event.which === 13) 
+    if (event.key === 'Enter' && event.target !== document.getElementById("textInput")) 
     {
-        const element = event.textInput;
-        if(element.tagName !== 'textInput')
-        {
-            event.preventDefault();
-        }
+        console.log("Not submitting!");
+        event.preventDefault();
     }
 });
-
+// Draw text upon changes in text area elements
 textPanelForm.addEventListener('input', (event) => 
 {
-    event.preventDefault();
-    //console.log("Text Panel change event triggered");
     drawText(getTextInputElementData());
 });
 
-function sendToScreen()
+function color24to16(color24)
 {
-  //const form = document.forms.textPanelForm;
-  console.log("sendToScreen():",getTextInputElementData());
-  drawText(getTextInputElementData());
-  displayTextValue[0].control(JSON.stringify(getTextInputElementData()));
+    console.log("Input color code:",color24);
+
+    const r = parseInt(color24.slice(1, 3), 16);
+    const g = parseInt(color24.slice(3, 5), 16);
+    const b = parseInt(color24.slice(5, 7), 16);
+
+    const r5 = Math.round((r / 255) * 31);
+    const g6 = Math.round((g / 255) * 63);
+    const b5 = Math.round((b / 255) * 31);
+
+    let color565 = (r5 << 11) | (g6 << 5) | b5;
+
+    color565 ="0x"+color565.toString(16).toUpperCase().padStart(4, '0');
+
+    console.log("Output color code:", color565);
+
+    return color565;
+}
+
+function sendToScreen(object)
+{
+  let config = {
+    x:object.x,
+    y:object.y,
+    text:object.text,
+    w:object.w,
+    h:object.h,
+    tColor:color24to16(object.tColor),
+    bColor:color24to16(object.bColor),
+    tSize:object.tSize
+};
+
+  console.log("sendToScreen()", config);
+
+  displayTextValue[0].control(JSON.stringify(config));
 }
 
 function setup() 
@@ -338,14 +364,12 @@ function clearScreen()
 
 function drawChar(char, x, y, tSize, c) 
 {
-    //console.log("drawChar:", char,x,y,tSize,c);
     if (char === undefined || char === null) {
         console.error("Invalid value for 'char' parameter", char);
         return;
     }
     
     let index = char.charCodeAt(0);
-    //console.log(index);
 
     for(let i = 0; i < charWidth; i++)
     {
@@ -363,69 +387,47 @@ function drawChar(char, x, y, tSize, c)
             }
         }
     }
-
 }
 
-function drawText(object)//x,y,text,w,h,tColor,bColor,tSize
+function drawText({x=0,y=0,text="",w=64,h=64,tColor=255,bColor=51,tSize=1})
 {
-    let {x=0,y=0,text="",w,h,tColor=255,bColor=51,tSize=1} = object;
-    //console.log("drawText(): ",x,y,text,w,h,tColor,bColor,tSize);
+    fillRect(x,y,w,h,bColor); //filling the text area with background color
     
     let charArray = text.split('');
+    let lineCharLimit = Math.floor((w / (charWidth + 1)) / tSize); //maximum number of characters on the line
+    let maxCharLimit = Math.floor(h / (charHeight * tSize)) * lineCharLimit; //maximum number of characters on the screen
     let startXPos = x;
-    let lineCharLimit = Math.floor(screenWidth/(charWidth+1));
-    let charCount = Math.floor(startXPos/(charWidth+1));//used for calculating how many chars available on the line
-    
-    if(w && h)
+    let charCount = 0;
+
+    if(charArray.length < maxCharLimit)
     {
-        fillRect(x,y,w,h,bColor);
-        let lineCharLimit = Math.floor((w/(charWidth+1))/tSize);
-        let maxCharLimit = lineCharLimit * Math.floor(h / (charHeight * tSize));
-        let charCount = 0;//treat as if x start position is 0
-        console.log("max char limit:", maxCharLimit,"line char limit", lineCharLimit);
-        for(let charWritten = 0; charWritten < maxCharLimit && charWritten < charArray.length; charWritten++)
-        {
-            if(charCount == lineCharLimit)
-            {
-                y+=charHeight * tSize;
-                x=startXPos;
-                charCount = 0;//Math.floor(startXPos/(charWidth+1));
-                //console.log("Shifting y to:",y,"Start position X:", startXPos, "Reserved chars:",Math.ceil(startXPos/Math.floor((charWidth+1)*tSize)));
-            }
-            if(charArray[charWritten] == '\n')
-            {
-                y+=charHeight * tSize;
-                x=startXPos;
-                charCount++;
-                maxCharLimit-=(lineCharLimit-charCount);
-                charCount=0;
-                //console.log("Shifting 'y' due to newline char");
-            }
-            if(charArray[charWritten] != '\n')
-            {
-                drawChar(charArray[charWritten],x,y,tSize,tColor);
-                charCount++;
-                //console.log("char written:", charWritten+1);
-                x+=(charWidth+1) * tSize;
-            }
-            console.log("x",x,"y:",y,"Start position X:", startXPos,"Max char limit:",maxCharLimit,"Char written:", charWritten);
-        }
+        maxCharLimit = charArray.length;
     }
-    else
+
+    for(let charWritten = 0; charWritten < maxCharLimit; charWritten++)
     {
-        for(let i = 0; i < charArray.length; i++, x+=(charWidth+1) * tSize)
+        if(charCount === lineCharLimit || charArray[charWritten] === '\n') //make new line if current character count equal to line limit
         {
-            //console.log("pos x:",x);
-            if(charCount == lineCharLimit)
+            y+=charHeight * tSize;
+            x=startXPos;
+            charCount = 0;
+
+            if(charArray[charWritten] === '\n') //make new line upon '\n' character in array
             {
-                y+=charHeight * tSize;
-                x=startXPos;
-                charCount = Math.floor(startXPos/(charWidth+1));
-                console.log("pos y:",y,"Start X position:", startXPos, "char count:",charCount);
+                continue;
             }
-            drawChar(charArray[i],x,y,tSize,tColor);
-            charCount++;
         }
+        
+        if(y > (screenHeight - (charHeight*tSize))) //if y out of bounds break
+        {
+            break;
+        }
+
+        drawChar(charArray[charWritten],x,y,tSize,tColor);
+        charCount++;
+        x+=(charWidth+1) * tSize;
+
+        console.log("x",x,"y:",y,"Start x:", startXPos,"Char limit:",maxCharLimit,"Line char limit",lineCharLimit,"Char written:", charWritten+1);
     }
 }
 
