@@ -189,6 +189,7 @@ let displayTextValue;
 const getValue = (id) => document.getElementById(id).value;
 
 const textPanelForm = document.getElementById('textPanelForm');
+const brightnessSlider = document.getElementById('brightness');
 
 const defaultConfig = {
     x: 0,//getValue("xPos"),
@@ -241,6 +242,11 @@ textPanelForm.addEventListener('input', (event) =>
     drawText(getTextInputElementData());
 });
 
+brightnessSlider.addEventListener('change', (event) =>
+{
+    brightnessControl();
+});
+
 function color24to16(color24)
 {
     console.log("Input color code:",color24);
@@ -280,9 +286,15 @@ function sendToScreen(object)
   displayTextValue[0].control(JSON.stringify(config));
 }
 
+function brightnessControl()
+{
+    displayBrightnessValue[0].control(brightnessSlider.value);
+}
+
 function setup() 
 {
-    createCanvas(screenWidth * boxSize, screenHeight * boxSize);
+    let canvas = createCanvas(screenWidth * boxSize, screenHeight * boxSize);
+    canvas.parent('canvas-holder');
     //background(0);
 
     cols = Math.floor(screenWidth);
@@ -395,39 +407,37 @@ function drawText({x=0,y=0,text="",w=64,h=64,tColor=255,bColor=51,tSize=1})
     
     let charArray = text.split('');
     let lineCharLimit = Math.floor((w / (charWidth + 1)) / tSize); //maximum number of characters on the line
-    let maxCharLimit = Math.floor(h / (charHeight * tSize)) * lineCharLimit; //maximum number of characters on the screen
     let startXPos = x;
+    let startYPos = y;
     let charCount = 0;
 
-    if(charArray.length < maxCharLimit)
+    for(const i in charArray)
     {
-        maxCharLimit = charArray.length;
-    }
-
-    for(let charWritten = 0; charWritten < maxCharLimit; charWritten++)
-    {
-        if(charCount === lineCharLimit || charArray[charWritten] === '\n') //make new line if current character count equal to line limit
+        //make new line if current char count exeeds the line limit OR if current char is a newline
+        if(charCount === lineCharLimit || charArray[i] === '\n')
         {
             y+=charHeight * tSize;
             x=startXPos;
             charCount = 0;
-
-            if(charArray[charWritten] === '\n') //make new line upon '\n' character in array
+            
+            if(charArray[i] === '\n') //skip the loop to not reserve blank space on screen
             {
                 continue;
             }
         }
-        
-        if(y > (screenHeight - (charHeight*tSize))) //if y out of bounds break
+        //if y out of bounds either on the screen height OR in the smaller canvas, break
+        if(y > (screenHeight - (charHeight*tSize)) || 
+           !((y + (charHeight * tSize)) <= (h + startYPos)))
         {
+            console.log("Out of bounds, y:",y);
             break;
         }
 
-        drawChar(charArray[charWritten],x,y,tSize,tColor);
+        drawChar(charArray[i],x,y,tSize,tColor);
         charCount++;
         x+=(charWidth+1) * tSize;
 
-        console.log("x",x,"y:",y,"Start x:", startXPos,"Char limit:",maxCharLimit,"Line char limit",lineCharLimit,"Char written:", charWritten+1);
+        console.log("x",x,"y:",y,"Start x:", startXPos,"Line char limit",lineCharLimit,"Char written:", i);
     }
 }
 
