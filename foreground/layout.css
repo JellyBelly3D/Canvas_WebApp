@@ -2,19 +2,19 @@ main {
   display: flex;
   justify-content: flex-start; 
   /* justify-content: space-evenly */
-  background-color: #27a7f6;
+  background-color: #27a7f6a4;
 }
 
 #text-area {
   /* flex-grow: 1; */
   margin: 10px;
-  background-color: #e9f3fceb;
+  background-color: #dee5ecf3;
 }
 
 #canvas-area {
   /* flex-grow: 2; */
   margin: 10px;
-  background-color: #e9f3fceb;
+  background-color: #dee5ecf3;
 }
 
 /* #textInput {

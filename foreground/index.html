@@ -12,14 +12,14 @@
   </head>
 
   <body onload="getValues()">
-    <header class="container"></header>
+    <!-- <header class="container"></header> -->
 
     <main class="container-fluid" id="midContainer">
       <div id="text-area">
          <form onsubmit="return false" action="" id="textPanelForm" name="textPanelForm"  > 
           <div>
             <!-- <label for="textInput">Text panel</label> -->
-            <textarea id="textInput" name="textInput" placeholder="Text input"></textarea>
+            <textarea id="textInput" name="textInput" placeholder="Text input" maxlength="1000"></textarea>
           </div>
           <label for="settings">
             <h6>Settings</h6> 
@@ -65,7 +65,7 @@
       </div>
     </main>
 
-    <footer class="container"></footer>
+    <!-- <footer class="container"></footer> -->
   </body>
 
   <script src="https://cdn.jsdelivr.net/npm/wappsto-wapp@latest/dist/wappsto-wapp.min.js"></script>
