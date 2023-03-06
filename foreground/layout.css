@@ -1,6 +1,6 @@
 main {
   display: flex;
-  justify-content: flex-start; 
+  justify-content: center; 
   /* justify-content: space-evenly */
   background-color: #27a7f6a4;
 }
@@ -17,7 +17,7 @@ main {
   background-color: #dee5ecf3;
 }
 
-/* #textInput {
-  height: 25%;
+#bitmap-area {
   margin: 10px;
-}  */
+  background-color: #dee5ecf3;
+}
