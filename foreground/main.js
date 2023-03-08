@@ -194,6 +194,7 @@ const textPanelForm = document.getElementById('textPanelForm');
 const brightnessSlider = document.getElementById('brightness');
 const fileSelector = document.getElementById('file');
 
+
 const defaultConfig = {
     x: 0,//getValue("xPos"),
     y: 0,//getValue("yPos"),
@@ -206,18 +207,29 @@ const textInputConfig = {
     bColor: "0",//getValue("backgroundColor"),
     tSize:  1,//getValue("textSize"),
     text:   "",//getValue("textInput"),
-}
+};
 
-const getTextInputElementData =() =>
+const getTextInputData =() =>
 ({
-    x: parseInt(getValue("xPos")),
-    y: parseInt(getValue("yPos")),
+    x: parseInt(getValue("textXPos")),
+    y: parseInt(getValue("textYPos")),
     w: parseInt(getValue("canvasWidth")),
     h: parseInt(getValue("canvasHeight")),
     tColor: getValue("textColor"),
     bColor: getValue("backgroundColor"),
     tSize: parseInt(getValue("tSize")),
     text: getValue("textInput")
+});
+
+const getBitmapInputData = (bitmap) =>
+({
+    x: parseInt(getValue("bitmapXPos")),
+    y: parseInt(getValue("bitmapYPos")),
+    w: parseInt(getValue("bitmapWidth")),
+    h: parseInt(getValue("bitmapHeight")),
+    color: "0xffff",
+    bColor: "0",
+    bitmap
 });
 
 async function getValues()
@@ -242,7 +254,7 @@ textPanelForm.addEventListener('keydown', (event) =>
 // Draw text upon changes in text area elements
 textPanelForm.addEventListener('input', (event) => 
 {
-    drawText(getTextInputElementData());
+    drawText(getTextInputData());
 });
 
 brightnessSlider.addEventListener('change', (event) =>
@@ -255,13 +267,24 @@ fileSelector.addEventListener('change', (event) =>
     console.log("fileselector",fileSelector.files[0]);
     const file = fileSelector.files[0];
     fileReader.readAsArrayBuffer(file);
-
+    
     fileReader.onload = function()
     {
-        const data = fileReader.result;
-        const view = new Int16Array(data);
-        console.log("file data", view);
-        drawRGBBitmap(0,0,view,64,64);
+        if(file.type == "image/bmp")
+        {
+            console.log("Got file:",file.name,file.type);
+
+            const data = fileReader.result;
+            const bitmap = new Int16Array(data);
+
+            drawRGBBitmap(getBitmapInputData(bitmap));
+        }
+
+        if(file.type == "image/x-xbitmap")
+        {
+            console.log("Got file:",file.name,file.type);
+        }
+
     };
 });
 
@@ -302,6 +325,7 @@ function convert16to24(color16)
 
 function sendToScreen(object)
 {
+  //fix this, bad object creation, can be shorter
   let config = {
     x:object.x,
     y:object.y,
@@ -311,7 +335,7 @@ function sendToScreen(object)
     tColor:convert24to16(object.tColor),
     bColor:convert24to16(object.bColor),
     tSize:object.tSize
-};
+  };
 
   console.log("sendToScreen()", config);
 
@@ -473,7 +497,7 @@ function drawText({x=0,y=0,text="",w=64,h=64,tColor=255,bColor=51,tSize=1})
     }
 }
 
-function drawXBitmap(x,y,bitmap,w,h,c)
+function drawXBitmap({x=0,y=0,bitmap,w=64,h=64,c=255})
 {
     const byteWidth = Math.floor((w + 7) / 8);
     b = new Uint8ClampedArray(bitmap.length);
@@ -499,7 +523,7 @@ function drawXBitmap(x,y,bitmap,w,h,c)
     }
 }
 
-function drawRGBBitmap(x,y,bitmap,w,h)
+function drawRGBBitmap({x=0,y=0,bitmap,w=0,h=0})
 {
     fillRect(x,y,w,h,'#ffffff');
 

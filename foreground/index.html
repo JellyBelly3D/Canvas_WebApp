@@ -1,80 +1,127 @@
 <!DOCTYPE html>
 <html data-theme="light">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-widt, initial-scale=1.0" />
-    <link
-      rel="stylesheet"
-      href="https://unpkg.com/@picocss/pico@1.*/css/pico.min.css"
-    />
-    <link rel="stylesheet" href="layout.css" />
-    <title>LED Canvas</title>
-  </head>
 
-  <body onload="getValues()">
-    <!-- <header class="container"></header> -->
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-widt, initial-scale=1.0" />
+  <link rel="stylesheet" href="https://unpkg.com/@picocss/pico@1.*/css/pico.min.css" />
+  <link rel="stylesheet" href="layout.css" />
+  <title>LED Canvas</title>
+</head>
 
-    <main class="container-fluid" id="midContainer">
-      <div id="text-area">
-         <form onsubmit="return false" action="" id="textPanelForm" name="textPanelForm"  > 
-          <div>
-            <!-- <label for="textInput">Text panel</label> -->
-            <textarea id="textInput" name="textInput" placeholder="Text input" maxlength="1000"></textarea>
-          </div>
-          <label for="settings">
-            <h6>Settings</h6> 
-            <div id="settings" class="grid">
-              <label for="xPos">X pos (0-63)
-                <input type="number" placeholder="0-63" id="xPos" name="xPos" min="0" max="63" value="0"/>
-              </label>
-              <label for="yPos">Y pos (0-63)
-                <input type="number" placeholder="0-63" id="yPos" name="yPos" min="0" max="63" value="0"/>
-              </label>
-            </div>
-            <div class="grid">
-              <label for="canvasWidth">Canvas width (1-64)
-                <input type="number" id="canvasWidth" name="canvasWidth" min="0" max="64" value="64"/>
-              </label>
-              <label for="canvasHeight">Canvas height (1-64)
-                <input type="number" id="canvasHeight" name="canvasHeight" min="0" max="64" value="64"/>
-              </label>
-            </div>
-          </label>
-          <div>
-            <label for="tSize">Text size</label>
-            <input type="number" id="tSize" name="tSize" min="1" max="20" value="1"/>
-            <label for="textColor">Text color</label>
-            <input type="color" id="textColor" name="textColor" value="#FFFFFF" />
-            <label for="backgroundColor">Background color</label>
-            <input type="color" id="backgroundColor" name="backgroundColor" value="#454545"/>
-          </div>
-          <button onclick="sendToScreen(getTextInputElementData())">
-            Send to screen
-          </button>
-        </form>
-      </div>
-      <div id="canvas-area">
+<body onload="getValues()">
+  <!-- <header class="container"></header> -->
+
+  <main class="container-fluid" id="midContainer">
+    <div id="text-area">
+      <form onsubmit="return false" action="" id="textPanelForm" name="textPanelForm">
         <div>
-          <button onclick="clearScreen()">Clear Screen</button>
+          <!-- <label for="textInput">Text panel</label> -->
+          <textarea id="textInput" name="textInput" placeholder="Text input" maxlength="1000"></textarea>
         </div>
-        <div id="canvas-holder"></div>
-        <label for="brightness">
-          Brightness
-          <input id="brightness" name="brightness" type="range" min="0" max="100" value="50">
+        <label for="textSettings">
+          <h6>Text settings</h6>
+          <div id="textSettings" class="grid">
+            <label for="textXPos">X position (0-63)
+              <input type="number" placeholder="0-63" id="textXPos" name="textXPos" min="0" max="63" value="0" />
+            </label>
+            <label for="textYPos">Y position (0-63)
+              <input type="number" placeholder="0-63" id="textYPos" name="textYPos" min="0" max="63" value="0" />
+            </label>
+          </div>
+          <div class="grid">
+            <label for="canvasWidth">Canvas width (1-64)
+              <input type="number" id="canvasWidth" name="canvasWidth" min="0" max="64" value="64" />
+            </label>
+            <label for="canvasHeight">Canvas height (1-64)
+              <input type="number" id="canvasHeight" name="canvasHeight" min="0" max="64" value="64" />
+            </label>
+          </div>
         </label>
+        <div>
+          <label for="tSize">Text size</label>
+          <input type="number" id="tSize" name="tSize" min="1" max="20" value="1" />
+          <label for="textColor">Text color</label>
+          <input type="color" id="textColor" name="textColor" value="#FFFFFF" />
+          <label for="backgroundColor">Background color</label>
+          <input type="color" id="backgroundColor" name="backgroundColor" value="#454545" />
+        </div>
+        <button onclick="sendToScreen(getTextInputData())">
+          Send to screen
+        </button>
+      </form>
+    </div>
+    <div id="canvas-area">
+      <div>
+        <button onclick="clearScreen()">Clear Screen</button>
       </div>
-      <div id="bitmap-area">
-        <input id="file" type="file" name="file">
-      </div>
-    </main>
+      <div id="canvas-holder"></div>
+      <label for="brightness">
+        Brightness
+        <input id="brightness" name="brightness" type="range" min="0" max="100" value="50">
+      </label>
+    </div>
+    <div id="bitmap-area">
+      <form onsubmit="return false" action="" id="bitmapPanelForm" name="bitmapPanelForm">
+        <label for="bitmapSettings">
+          <h6>Bitmap settings</h6>
+          <div id="bitmapSettings" class="grid">
+            <label for="bitmapXPos">X position (0-63)
+              <input type="number" placeholder="0-63" id="bitmapXPos" name="bitmapXPos" min="0" max="63" value="0" />
+            </label>
+            <label for="bitmapYPos">Y position (0-63)
+              <input type="number" placeholder="0-63" id="bitmapYPos" name="bitmapYPos" min="0" max="63" value="0" />
+            </label>
+          </div>
+          <div class="grid">
+            <label for="bitmapWidth">Bitmap width (1-64)
+              <input type="number" id="bitmapWidth" name="bitmapWidth" min="0" max="64" value="64" />
+            </label>
+            <label for="bitmapHeight">Bitmap height (1-64)
+              <input type="number" id="bitmapHeight" name="bitmapHeight" min="0" max="64" value="64" />
+            </label>
+          </div>
+        </label>
+        <!-- <fieldset>
+          <legend><strong>Bitmap type</strong></legend>
+          <label for="colorBitmap">
+            Color bitmap
+            <input type="radio" id="colorBitmap" name="radio" value="ColoredBitmap" checked="">
+          </label>
+          <label for="monoBitmap">
+            Mono bitmap
+            <input type="radio" id="monoBitmap" name="radio" value="MonochromeBitmap">
+          </label>
+        </fieldset> -->
+        <label for="bitmapColors">
+          <h6>Mono bitmap colors</h6>
+          <div id="bitmapColors">
+            <label for="bitmapColor">
+              Bitmap color
+              <input type="color" id="bitmapColor" name="monoColor" disabled="">
+            </label>
+            <label for="bitmapBgColor">
+              Bitmap background color
+              <input type="color" id="bitmapBgColor" name="bitmapBgColor" disabled="">
+            </label>
+          </div>
+        </label>
+        <input id="file" type="file" accept=".bmp,.xbm" name="file">
+        <button onclick="">
+          Send to screen
+        </button>
+      </form>
+    </div>
+  </main>
 
-    <!-- <footer class="container"></footer> -->
-  </body>
+  <!-- <footer class="container"></footer> -->
+</body>
 
-  <script src="https://cdn.jsdelivr.net/npm/wappsto-wapp@latest/dist/wappsto-wapp.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/p5@1.5.0/lib/p5.js"></script>
-  <script src="main.js"></script>
-  <!-- <script>
+<script src="https://cdn.jsdelivr.net/npm/wappsto-wapp@latest/dist/wappsto-wapp.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/p5@1.5.0/lib/p5.js"></script>
+<script src="main.js"></script>
+<!-- <script>
     setup();
   </script> -->
+
 </html>

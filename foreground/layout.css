@@ -7,17 +7,20 @@ main {
 
 #text-area {
   /* flex-grow: 1; */
+  padding: 10px;
   margin: 10px;
   background-color: #dee5ecf3;
 }
 
 #canvas-area {
   /* flex-grow: 2; */
+  padding: 2px;
   margin: 10px;
   background-color: #dee5ecf3;
 }
 
 #bitmap-area {
+  padding: 10px;
   margin: 10px;
   background-color: #dee5ecf3;
 }
