@@ -186,8 +186,6 @@ let displayMonoBitmapValue;
 let displayRgbBitmapValue;
 let displayTextValue;
 
-const fileReader = new FileReader();
-
 const getValue = (id) => document.getElementById(id).value;
 
 const textPanelForm = document.getElementById('textPanelForm');
@@ -266,25 +264,96 @@ fileSelector.addEventListener('change', (event) =>
 {
     console.log("fileselector",fileSelector.files[0]);
     const file = fileSelector.files[0];
+    const fileReader = new FileReader();
     fileReader.readAsArrayBuffer(file);
-    
-    fileReader.onload = function()
+
+    fileReader.onload = function(e)
     {
+        const arrayBuffer = e.target.result;
+        const imageBlob = new Blob([arrayBuffer])
+
+        const img = new Image();
+        img.src = URL.createObjectURL(imageBlob);
+
+        img.onload = function()
+        {
+            const imageWidth = this.width;
+            const imageHeight = this.height; 
+            console.log("Image dimensions w:",imageWidth,"h:",imageHeight);
+
+            if(imageWidth > screenWidth || imageHeight > screenHeight || file.type == 'image/jpeg')
+            {
+                console.log("Image exceeds screen dimensions");
+
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+
+                canvas.width = 64;
+                canvas.height = 64;
+
+                createImageBitmap(imageBlob,
+                {
+                    resizeWidth:screenWidth,
+                    resizeHeight:screenWidth,
+                    imageOrientation:"flipY",
+
+                }).then(bitmap => 
+                {
+                    //const offscreen = new OffscreenCanvas(screenWidth,screenHeight);
+                    //offscreen.transferToImageBitmap(bitmap);
+                    ctx.drawImage(bitmap,0,0,64,64);
+                    document.body.appendChild(canvas); //preview the result
+                    
+                    const imageData = ctx.getImageData(0,0,screenWidth,screenHeight,{colorSpace:"srgb"});
+                    console.log(imageData);
+                    const bitmapData = new Int16Array(imageData.length/2);
+                    
+                    for(let i = 0; i < imageData.length; i+=4)
+                    {
+                        bitmapData[i + 0] = 0; // R
+                        bitmapData[i + 1] = 190; // G
+                        bitmapData[i + 2] = 0; // B
+
+                        console.log("huh", i);
+                    }
+                    
+
+                    
+                    canvas.toBlob((blob) =>
+                    {
+                        const reader = new FileReader();
+                        reader.readAsArrayBuffer(blob);
+                        reader.onload = function(evt)
+                        {
+                            drawRGBBitmap(getBitmapInputData(bitmapData));
+                        }
+                    }, 'image/bmp', 1);
+                })
+            }
+        };
+
+
         if(file.type == "image/bmp")
         {
-            console.log("Got file:",file.name,file.type);
-
-            const data = fileReader.result;
-            const bitmap = new Int16Array(data);
-
+            const bitmap = new Int16Array(arrayBuffer);
+            console.log("Got file:",file.name,file.type,"Bitmap",bitmap);
+            
             drawRGBBitmap(getBitmapInputData(bitmap));
         }
-
+        
         if(file.type == "image/x-xbitmap")
         {
             console.log("Got file:",file.name,file.type);
+            //enabling color pickers for mono bitmap
+            document.getElementById("bitmapColor").disabled = false;
+            document.getElementById("bitmapBgColor").disabled = false;
         }
-
+        else
+        {
+            //disabling color pickers for NOT mono bitmap
+            document.getElementById("bitmapColor").disabled = true;
+            document.getElementById("bitmapBgColor").disabled = true;
+        }
     };
 });
 
@@ -531,7 +600,8 @@ function drawRGBBitmap({x=0,y=0,bitmap,w=0,h=0})
     {
         for(let i = 0; i < w; i++)
         {
-            drawPixel(x + i, y, convert16to24(bitmap[j * w + i]));
+            //drawPixel(x + i, y, convert16to24(bitmap[j * w + i]));
+            drawPixel(x + i, y, bitmap[j * w + i]);
         }
     }
 }
