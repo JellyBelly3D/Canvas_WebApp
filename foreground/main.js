@@ -295,7 +295,7 @@ fileSelector.addEventListener('change', (event) =>
                 {
                     resizeWidth:screenWidth,
                     resizeHeight:screenWidth,
-                    imageOrientation:"flipY",
+                    imageOrientation: 'none',
 
                 }).then(bitmap => 
                 {
@@ -305,37 +305,49 @@ fileSelector.addEventListener('change', (event) =>
                     document.body.appendChild(canvas); //preview the result
                     
                     const imageData = ctx.getImageData(0,0,screenWidth,screenHeight,{colorSpace:"srgb"});
-                    console.log(imageData);
-                    const bitmapData = new Int16Array(imageData.length/2);
-                    
-                    for(let i = 0; i < imageData.length; i+=4)
-                    {
-                        bitmapData[i + 0] = 0; // R
-                        bitmapData[i + 1] = 190; // G
-                        bitmapData[i + 2] = 0; // B
 
-                        console.log("huh", i);
+                    const bitmapData = new Uint8ClampedArray(Math.ceil(imageData.data.length/4)*3);
+
+                    console.log("imageData length:",imageData.data.length,"bitmapData length:",bitmapData.length);
+
+                    let j = 0;
+                    for(let i = 0; i < imageData.data.length; i += 4)
+                    {
+                        bitmapData[j] = imageData.data[i];
+                        bitmapData[j + 1] = imageData.data[i + 1];
+                        bitmapData[j + 2] = imageData.data[i + 2];
+                        j += 3
+                    }
+
+                    const rgb565Bitmap = new Uint16Array(Math.ceil(bitmapData.length/2));
+
+                    j = 0;
+                    for(let i = 0; i < bitmapData.length; i += 3)
+                    {
+                        const r = bitmapData[i];
+                        const g = bitmapData[i + 1];
+                        const b = bitmapData[i + 2];
+
+                        const r5 = Math.round((r / 255) * 31);
+                        const g6 = Math.round((g / 255) * 63);
+                        const b5 = Math.round((b / 255) * 31);
+
+                        const rgb565 = (r5 << 11) | (g6 << 5) | b5;
+
+                        rgb565Bitmap[j++] = rgb565;  
                     }
                     
+                    console.log("bitmapData",bitmapData,"rgb565Bitmap",rgb565Bitmap);
 
+                    drawRGBBitmap(getBitmapInputData(rgb565Bitmap));
                     
-                    canvas.toBlob((blob) =>
-                    {
-                        const reader = new FileReader();
-                        reader.readAsArrayBuffer(blob);
-                        reader.onload = function(evt)
-                        {
-                            drawRGBBitmap(getBitmapInputData(bitmapData));
-                        }
-                    }, 'image/bmp', 1);
                 })
             }
         };
-
-
+        
         if(file.type == "image/bmp")
         {
-            const bitmap = new Int16Array(arrayBuffer);
+            const bitmap = new Uint16Array(arrayBuffer);
             console.log("Got file:",file.name,file.type,"Bitmap",bitmap);
             
             drawRGBBitmap(getBitmapInputData(bitmap));
@@ -383,12 +395,12 @@ function convert24to16(color24)
 function convert16to24(color16) 
 {
     let r5 = (color16 & 0b1111100000000000) >> 11;
-    let g6 = (color16 & 0b0000011111000000) >> 5;
-    let b5 = color16 & 0b0000000000111111;
+    let g6 = (color16 & 0b0000011111100000) >> 5;
+    let b5 =  color16 & 0b0000000000011111;
 
-    let r8 = (r5 * 527 + 23) >> 6;
-    let g8 = (g6 * 259 + 33) >> 6;
-    let b8 = (b5 * 527 + 23) >> 6;
+    let r8 = Math.floor(r5 * 255 / 31 + 0.5);
+    let g8 = Math.floor(g6 * 255 / 63 + 0.5);
+    let b8 = Math.floor(b5 * 255 / 31 + 0.5);
     return `#${(r8 << 16 | g8 << 8 | b8).toString(16).padStart(6, "0")}`;
 }
 
@@ -600,8 +612,7 @@ function drawRGBBitmap({x=0,y=0,bitmap,w=0,h=0})
     {
         for(let i = 0; i < w; i++)
         {
-            //drawPixel(x + i, y, convert16to24(bitmap[j * w + i]));
-            drawPixel(x + i, y, bitmap[j * w + i]);
+            drawPixel(x + i, y, convert16to24(bitmap[j * w + i]));
         }
     }
 }
