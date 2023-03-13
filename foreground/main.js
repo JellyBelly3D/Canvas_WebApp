@@ -188,14 +188,12 @@ let displayTextValue;
 let storage;
 
 let outputImage;
-let outputImageBlob;
 
 const getValue = (id) => document.getElementById(id).value;
 
 const textPanelForm = document.getElementById('textPanelForm');
 const brightnessSlider = document.getElementById('brightness');
 const fileSelector = document.getElementById('file');
-
 
 const defaultConfig = {
     x: 0,//getValue("xPos"),
@@ -266,128 +264,83 @@ brightnessSlider.addEventListener('change', () =>
 
 fileSelector.addEventListener('change', (e) =>
 {
-    console.log("fileselector",fileSelector.files[0]);
     const file = fileSelector.files[0];
     const fileReader = new FileReader();
+
     fileReader.readAsArrayBuffer(file);
-
-    fileReader.onload = function(e)
-    {
-        const arrayBuffer = e.target.result;
-        const imageBlob = new Blob([arrayBuffer])
-
-        const img = new Image();
-        img.src = URL.createObjectURL(imageBlob);
-
-        img.onload = function()
-        {
-            const imageWidth = this.width;
-            const imageHeight = this.height; 
-            console.log("Image dimensions w:",imageWidth,"h:",imageHeight);
-
-            if(imageWidth > screenWidth || imageHeight > screenHeight || file.type == 'image/jpeg')
-            {
-                console.log("Image exceeds screen dimensions");
-
-                const targetWidth = parseInt(getValue("bitmapWidth"));
-                const targetHeight = parseInt(getValue("bitmapHeight"));
-            
-                const offscreen = new OffscreenCanvas(targetWidth,targetHeight);
-                const ctx = offscreen.getContext("2d");
-            
-                createImageBitmap(imageBlob,
-                    {
-                        resizeWidth:targetWidth,
-                        resizeHeight:targetWidth,
-                    }).then(bitmap => 
-                    {
-                        ctx.drawImage(bitmap,0,0,targetWidth,targetHeight);
-                        const imageData = ctx.getImageData(0,0,targetWidth,targetHeight);
-                        
-                        const bitmapData = new Uint8ClampedArray(Math.ceil(imageData.data.length/4)*3);
-                        
-                        console.log("imageData length:",imageData.data.length,"bitmapData length:",bitmapData.length);
-                        
-                        let j = 0;
-                        for(let i = 0; i < imageData.data.length; i += 4)
-                        {
-                            bitmapData[j] = imageData.data[i];
-                            bitmapData[j + 1] = imageData.data[i + 1];
-                            bitmapData[j + 2] = imageData.data[i + 2];
-                            j += 3
-                        }
-            
-                        const rgb565Bitmap = new Uint16Array(Math.ceil(bitmapData.length/3));
-                        
-                        j = 0;
-                        for(let i = 0; i < bitmapData.length; i += 3)
-                        {
-                            const r = bitmapData[i];
-                            const g = bitmapData[i + 1];
-                            const b = bitmapData[i + 2];
-            
-                            const r5 = Math.round((r / 255) * 31);
-                            const g6 = Math.round((g / 255) * 63);
-                            const b5 = Math.round((b / 255) * 31);
-            
-                            const rgb565 = (r5 << 11) | (g6 << 5) | b5;
-            
-                            rgb565Bitmap[j++] = rgb565;  
-                        }
-                        console.log("bitmapData",bitmapData,"rgb565Bitmap",rgb565Bitmap);
-                        drawRGBBitmap(getBitmapInputData(rgb565Bitmap));//drawing image preview
-                        
-                        outputImageBlob = new Blob([rgb565Bitmap])
-                        outputImage = new File([outputImageBlob], "output.bmp",{type:"image/bmp"});//creating converted image file
-                        console.log("Blob",outputImageBlob,"img",outputImage);
-
-                        // //pasta of the copy
-                        // const url = URL.createObjectURL(outputImage);
-                        // const link = document.createElement('a');
-                        // link.href = url;
-                        // link.download = outputImage.name;
-                        // document.body.appendChild(link);
-                        // link.click();
-
-                        // // Clean up by revoking the object URL
-                        // URL.revokeObjectURL(url);
-                    })
-            }
-        };
-        
-        if(file.type == "image/bmp")
-        {
-        const bitmap = new Uint16Array(arrayBuffer);
-        console.log("Got file:",file.name,file.type,"Bitmap",bitmap);
-        
-        drawRGBBitmap(getBitmapInputData(bitmap));
-        }
-        
-        if(file.type == "image/x-xbitmap")
-        {
-            console.log("Got file:",file.name,file.type);
-            //enabling color pickers for mono bitmap
-            document.getElementById("bitmapColor").disabled = false;
-            document.getElementById("bitmapBgColor").disabled = false;
-        }
-        else
-        {
-            //disabling color pickers for NOT mono bitmap
-            document.getElementById("bitmapColor").disabled = true;
-            document.getElementById("bitmapBgColor").disabled = true;
-        }
-    };
+    fileReader.onload = handleFileLoad;
 });
+
+function handleFileLoad(e) 
+{
+    const arrayBuffer = e.target.result;
+    const imageBlob = new Blob([arrayBuffer])
+    const img = new Image();
+    img.src = URL.createObjectURL(imageBlob);
+  
+    img.onload = function() 
+    {
+      const targetWidth = parseInt(getValue("bitmapWidth"));
+      const targetHeight = parseInt(getValue("bitmapHeight"));
+
+      const offscreen = new OffscreenCanvas(targetWidth,targetHeight);
+      const ctx = offscreen.getContext("2d");
+  
+      createImageBitmap(imageBlob, {
+        resizeWidth:targetWidth,
+        resizeHeight:targetWidth,
+      }).then(bitmap =>
+        {
+            ctx.drawImage(bitmap,0,0,targetWidth,targetHeight);
+            const imageData = ctx.getImageData(0,0,targetWidth,targetHeight);
+            const bitmapData = getBitmapData(imageData);
+            const rgb565Bitmap = getRGBBitmap(bitmapData);
+        
+            drawRGBBitmap(getBitmapInputData(rgb565Bitmap));//drawing image preview
+            
+            const outputImageBlob = new Blob([rgb565Bitmap])
+            outputImage = new File([outputImageBlob], "output.bmp",{type:"image/bmp"});
+        });
+    };
+}
+
+function getBitmapData(imageData) 
+{
+    const bitmapData = new Uint8ClampedArray(Math.ceil(imageData.data.length/4)*3);
+    let j = 0;
+    for(let i = 0; i < imageData.data.length; i += 4) 
+    {
+      bitmapData[j] = imageData.data[i];
+      bitmapData[j + 1] = imageData.data[i + 1];
+      bitmapData[j + 2] = imageData.data[i + 2];
+      j += 3
+    }
+    return bitmapData;
+}
+
+function getRGBBitmap(bitmapData) 
+{
+    const rgb565Bitmap = new Uint16Array(Math.ceil(bitmapData.length/3));
+    let j = 0;
+    for(let i = 0; i < bitmapData.length; i += 3) 
+    {
+      const r = bitmapData[i];
+      const g = bitmapData[i + 1];
+      const b = bitmapData[i + 2];
+  
+      const color24 = "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
+      const rgb565 = convert24to16(color24);
+  
+      rgb565Bitmap[j++] = parseInt(rgb565,16);  
+    }
+    return rgb565Bitmap;
+}
 
 function convert24to16(color24)
 {
-    console.log("Input color code:",color24);
-
     const r = parseInt(color24.slice(1, 3), 16);
     const g = parseInt(color24.slice(3, 5), 16);
     const b = parseInt(color24.slice(5, 7), 16);
-
-    console.log(r,g,b);
 
     const r5 = Math.round((r / 255) * 31);
     const g6 = Math.round((g / 255) * 63);
@@ -396,8 +349,6 @@ function convert24to16(color24)
     let color565 = (r5 << 11) | (g6 << 5) | b5;
 
     color565 ="0x"+color565.toString(16).toUpperCase().padStart(4, '0');
-
-    console.log("Output color code:", color565);
 
     return color565;
 }
@@ -412,60 +363,6 @@ function convert16to24(color16)
     let g8 = Math.floor(g6 * 255 / 63 + 0.5);
     let b8 = Math.floor(b5 * 255 / 31 + 0.5);
     return `#${(r8 << 16 | g8 << 8 | b8).toString(16).padStart(6, "0")}`;
-}
-
-function convertImage(imageBlob)
-{
-    console.log("Image exceeds screen dimensions");
-
-    const targetWidth = parseInt(getValue("bitmapWidth"));
-    const targetHeight = parseInt(getValue("bitmapHeight"));
-
-    const offscreen = new OffscreenCanvas(targetWidth,targetHeight);
-    const ctx = offscreen.getContext("2d");
-
-    createImageBitmap(imageBlob,
-        {
-            resizeWidth:targetWidth,
-            resizeHeight:targetWidth,
-        }).then(bitmap => 
-        {
-            ctx.drawImage(bitmap,0,0,targetWidth,targetHeight);
-            const imageData = ctx.getImageData(0,0,targetWidth,targetHeight);
-            
-            const bitmapData = new Uint8ClampedArray(Math.ceil(imageData.data.length/4)*3);
-            
-            console.log("imageData length:",imageData.data.length,"bitmapData length:",bitmapData.length);
-            
-            let j = 0;
-            for(let i = 0; i < imageData.data.length; i += 4)
-            {
-                bitmapData[j] = imageData.data[i];
-                bitmapData[j + 1] = imageData.data[i + 1];
-                bitmapData[j + 2] = imageData.data[i + 2];
-                j += 3
-            }
-
-            const rgb565Bitmap = new Uint16Array(Math.ceil(bitmapData.length/3));
-
-            j = 0;
-            for(let i = 0; i < bitmapData.length; i += 3)
-            {
-                const r = bitmapData[i];
-                const g = bitmapData[i + 1];
-                const b = bitmapData[i + 2];
-
-                const r5 = Math.round((r / 255) * 31);
-                const g6 = Math.round((g / 255) * 63);
-                const b5 = Math.round((b / 255) * 31);
-
-                const rgb565 = (r5 << 11) | (g6 << 5) | b5;
-
-                rgb565Bitmap[j++] = rgb565;  
-            }
-            console.log("bitmapData",bitmapData,"rgb565Bitmap",rgb565Bitmap);
-        })
-
 }
 
 function sendToScreen(object)
@@ -489,23 +386,25 @@ function sendToScreen(object)
 
 async function sendBitmapToScreen()
 {
-
     const data = storage.get("imageID");
     const sessionID = getCookie('sessionID');
 
     if(data == undefined)
     {
-        const imgId = create_file("img", outputImage);
+        const imgId = createFile("img", outputImage);
         await storage.set("imageId",imgId);
         
     }
 
-    console.log("https://wappsto.com/services/2.1/file/{"+imgId+"}?X_session={"+sessionID+"}");
+    console.log('https://wappsto.com/services/2.1/file/${imgId}?X_session=${sessionID}');
 
-    displayRgbBitmapValue[0].control(JSON.stringify(getBitmapInputData({bitmap:"https://wappsto.com/services/2.1/file/{"+imgId+"}?X_session={"+sessionID+"}"})));
+    displayRgbBitmapValue[0].control(
+        JSON.stringify(
+            getBitmapInputData(
+                {bitmap:'https://wappsto.com/services/2.1/file/${imgId}?X_session=${sessionID}'})));
 }
 
-async function create_file(file_name, raw_data) 
+async function createFile(file_name, raw_data) 
 {
     const data = new FormData();
     data.append(file_name, raw_data);
@@ -522,7 +421,7 @@ async function create_file(file_name, raw_data)
     return rsp.data.meta.id;
 }
 
-async function update_file(file_id, raw_data) 
+async function updateFile(file_id, raw_data) 
 {
     const data = new FormData();
     data.append(file_id, raw_data);
@@ -540,7 +439,8 @@ async function update_file(file_id, raw_data)
 function getCookie(cookieName) 
 {
     let cookie = {};
-    document.cookie.split(';').forEach(function(el) {
+    document.cookie.split(';').forEach(function(el) 
+    {
       let [key,value] = el.split('=');
       cookie[key.trim()] = value;
     })
@@ -556,7 +456,6 @@ function setup()
 {
     let canvas = createCanvas(screenWidth * boxSize, screenHeight * boxSize);
     canvas.parent('canvas-holder');
-    //background(0);
 
     cols = Math.floor(screenWidth);
     rows = Math.floor(screenHeight);
@@ -572,7 +471,7 @@ function setup()
     {
       for (let x = 0; x < rows; x++) 
       {
-        grid[y][x] = new Pixel(x, y, 51); //Math.floor(Math.random()*255)
+        grid[y][x] = new Pixel(x, y, 51);
       }
     }
     
