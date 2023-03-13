@@ -185,6 +185,10 @@ let displayDevice;
 let displayMonoBitmapValue;
 let displayRgbBitmapValue;
 let displayTextValue;
+let storage;
+
+let outputImage;
+let outputImageBlob;
 
 const getValue = (id) => document.getElementById(id).value;
 
@@ -238,29 +242,29 @@ async function getValues()
     displayRgbBitmapValue = displayDevice[0].findValueByName("RGB565 Bitmap");
     displayBrightnessValue = displayDevice[0].findValueByName("Brightness");
     displayTextValue = displayDevice[0].findValueByName("Text input");
-}
 
+    storage = await Wappsto.wappStorage();
+}
 // Preventing textPanelForm from submitting upon 'Enter' keypress
-textPanelForm.addEventListener('keydown', (event) => 
+textPanelForm.addEventListener('keydown', (e) => 
 {
-    if (event.key === 'Enter' && event.target !== document.getElementById("textInput")) 
+    if (e.key === 'Enter' && e.target !== document.getElementById("textInput")) 
     {
-        console.log("Not submitting!");
-        event.preventDefault();
+        e.preventDefault();
     }
 });
 // Draw text upon changes in text area elements
-textPanelForm.addEventListener('input', (event) => 
+textPanelForm.addEventListener('input', () => 
 {
     drawText(getTextInputData());
 });
 
-brightnessSlider.addEventListener('change', (event) =>
+brightnessSlider.addEventListener('change', () =>
 {
     brightnessControl();
 });
 
-fileSelector.addEventListener('change', (event) =>
+fileSelector.addEventListener('change', (e) =>
 {
     console.log("fileselector",fileSelector.files[0]);
     const file = fileSelector.files[0];
@@ -285,72 +289,78 @@ fileSelector.addEventListener('change', (event) =>
             {
                 console.log("Image exceeds screen dimensions");
 
-                const canvas = document.createElement('canvas');
-                const ctx = canvas.getContext('2d');
-
-                canvas.width = 64;
-                canvas.height = 64;
-
+                const targetWidth = parseInt(getValue("bitmapWidth"));
+                const targetHeight = parseInt(getValue("bitmapHeight"));
+            
+                const offscreen = new OffscreenCanvas(targetWidth,targetHeight);
+                const ctx = offscreen.getContext("2d");
+            
                 createImageBitmap(imageBlob,
-                {
-                    resizeWidth:screenWidth,
-                    resizeHeight:screenWidth,
-                    imageOrientation: 'none',
-
-                }).then(bitmap => 
-                {
-                    //const offscreen = new OffscreenCanvas(screenWidth,screenHeight);
-                    //offscreen.transferToImageBitmap(bitmap);
-                    ctx.drawImage(bitmap,0,0,64,64);
-                    document.body.appendChild(canvas); //preview the result
-                    
-                    const imageData = ctx.getImageData(0,0,screenWidth,screenHeight,{colorSpace:"srgb"});
-
-                    const bitmapData = new Uint8ClampedArray(Math.ceil(imageData.data.length/4)*3);
-
-                    console.log("imageData length:",imageData.data.length,"bitmapData length:",bitmapData.length);
-
-                    let j = 0;
-                    for(let i = 0; i < imageData.data.length; i += 4)
                     {
-                        bitmapData[j] = imageData.data[i];
-                        bitmapData[j + 1] = imageData.data[i + 1];
-                        bitmapData[j + 2] = imageData.data[i + 2];
-                        j += 3
-                    }
-
-                    const rgb565Bitmap = new Uint16Array(Math.ceil(bitmapData.length/2));
-
-                    j = 0;
-                    for(let i = 0; i < bitmapData.length; i += 3)
+                        resizeWidth:targetWidth,
+                        resizeHeight:targetWidth,
+                    }).then(bitmap => 
                     {
-                        const r = bitmapData[i];
-                        const g = bitmapData[i + 1];
-                        const b = bitmapData[i + 2];
+                        ctx.drawImage(bitmap,0,0,targetWidth,targetHeight);
+                        const imageData = ctx.getImageData(0,0,targetWidth,targetHeight);
+                        
+                        const bitmapData = new Uint8ClampedArray(Math.ceil(imageData.data.length/4)*3);
+                        
+                        console.log("imageData length:",imageData.data.length,"bitmapData length:",bitmapData.length);
+                        
+                        let j = 0;
+                        for(let i = 0; i < imageData.data.length; i += 4)
+                        {
+                            bitmapData[j] = imageData.data[i];
+                            bitmapData[j + 1] = imageData.data[i + 1];
+                            bitmapData[j + 2] = imageData.data[i + 2];
+                            j += 3
+                        }
+            
+                        const rgb565Bitmap = new Uint16Array(Math.ceil(bitmapData.length/3));
+                        
+                        j = 0;
+                        for(let i = 0; i < bitmapData.length; i += 3)
+                        {
+                            const r = bitmapData[i];
+                            const g = bitmapData[i + 1];
+                            const b = bitmapData[i + 2];
+            
+                            const r5 = Math.round((r / 255) * 31);
+                            const g6 = Math.round((g / 255) * 63);
+                            const b5 = Math.round((b / 255) * 31);
+            
+                            const rgb565 = (r5 << 11) | (g6 << 5) | b5;
+            
+                            rgb565Bitmap[j++] = rgb565;  
+                        }
+                        console.log("bitmapData",bitmapData,"rgb565Bitmap",rgb565Bitmap);
+                        drawRGBBitmap(getBitmapInputData(rgb565Bitmap));//drawing image preview
+                        
+                        outputImageBlob = new Blob([rgb565Bitmap])
+                        outputImage = new File([outputImageBlob], "output.bmp",{type:"image/bmp"});//creating converted image file
+                        console.log("Blob",outputImageBlob,"img",outputImage);
 
-                        const r5 = Math.round((r / 255) * 31);
-                        const g6 = Math.round((g / 255) * 63);
-                        const b5 = Math.round((b / 255) * 31);
+                        // //pasta of the copy
+                        // const url = URL.createObjectURL(outputImage);
+                        // const link = document.createElement('a');
+                        // link.href = url;
+                        // link.download = outputImage.name;
+                        // document.body.appendChild(link);
+                        // link.click();
 
-                        const rgb565 = (r5 << 11) | (g6 << 5) | b5;
-
-                        rgb565Bitmap[j++] = rgb565;  
-                    }
-                    
-                    console.log("bitmapData",bitmapData,"rgb565Bitmap",rgb565Bitmap);
-
-                    drawRGBBitmap(getBitmapInputData(rgb565Bitmap));
-                    
-                })
+                        // // Clean up by revoking the object URL
+                        // URL.revokeObjectURL(url);
+                    })
             }
         };
         
         if(file.type == "image/bmp")
         {
-            const bitmap = new Uint16Array(arrayBuffer);
-            console.log("Got file:",file.name,file.type,"Bitmap",bitmap);
-            
-            drawRGBBitmap(getBitmapInputData(bitmap));
+        const bitmap = new Uint16Array(arrayBuffer);
+        console.log("Got file:",file.name,file.type,"Bitmap",bitmap);
+        
+        drawRGBBitmap(getBitmapInputData(bitmap));
         }
         
         if(file.type == "image/x-xbitmap")
@@ -404,6 +414,60 @@ function convert16to24(color16)
     return `#${(r8 << 16 | g8 << 8 | b8).toString(16).padStart(6, "0")}`;
 }
 
+function convertImage(imageBlob)
+{
+    console.log("Image exceeds screen dimensions");
+
+    const targetWidth = parseInt(getValue("bitmapWidth"));
+    const targetHeight = parseInt(getValue("bitmapHeight"));
+
+    const offscreen = new OffscreenCanvas(targetWidth,targetHeight);
+    const ctx = offscreen.getContext("2d");
+
+    createImageBitmap(imageBlob,
+        {
+            resizeWidth:targetWidth,
+            resizeHeight:targetWidth,
+        }).then(bitmap => 
+        {
+            ctx.drawImage(bitmap,0,0,targetWidth,targetHeight);
+            const imageData = ctx.getImageData(0,0,targetWidth,targetHeight);
+            
+            const bitmapData = new Uint8ClampedArray(Math.ceil(imageData.data.length/4)*3);
+            
+            console.log("imageData length:",imageData.data.length,"bitmapData length:",bitmapData.length);
+            
+            let j = 0;
+            for(let i = 0; i < imageData.data.length; i += 4)
+            {
+                bitmapData[j] = imageData.data[i];
+                bitmapData[j + 1] = imageData.data[i + 1];
+                bitmapData[j + 2] = imageData.data[i + 2];
+                j += 3
+            }
+
+            const rgb565Bitmap = new Uint16Array(Math.ceil(bitmapData.length/3));
+
+            j = 0;
+            for(let i = 0; i < bitmapData.length; i += 3)
+            {
+                const r = bitmapData[i];
+                const g = bitmapData[i + 1];
+                const b = bitmapData[i + 2];
+
+                const r5 = Math.round((r / 255) * 31);
+                const g6 = Math.round((g / 255) * 63);
+                const b5 = Math.round((b / 255) * 31);
+
+                const rgb565 = (r5 << 11) | (g6 << 5) | b5;
+
+                rgb565Bitmap[j++] = rgb565;  
+            }
+            console.log("bitmapData",bitmapData,"rgb565Bitmap",rgb565Bitmap);
+        })
+
+}
+
 function sendToScreen(object)
 {
   //fix this, bad object creation, can be shorter
@@ -421,6 +485,66 @@ function sendToScreen(object)
   console.log("sendToScreen()", config);
 
   displayTextValue[0].control(JSON.stringify(config));
+}
+
+async function sendBitmapToScreen()
+{
+
+    const data = storage.get("imageID");
+    const sessionID = getCookie('sessionID');
+
+    if(data == undefined)
+    {
+        const imgId = create_file("img", outputImage);
+        await storage.set("imageId",imgId);
+        
+    }
+
+    console.log("https://wappsto.com/services/2.1/file/{"+imgId+"}?X_session={"+sessionID+"}");
+
+    displayRgbBitmapValue[0].control(JSON.stringify(getBitmapInputData({bitmap:"https://wappsto.com/services/2.1/file/{"+imgId+"}?X_session={"+sessionID+"}"})));
+}
+
+async function create_file(file_name, raw_data) 
+{
+    const data = new FormData();
+    data.append(file_name, raw_data);
+
+    const rsp = await Wappsto.request.post(
+        '/2.1/file',
+        data,
+        {
+          headers: {
+            'Content-Type': 'multipart/form-data'
+          }
+        });
+
+    return rsp.data.meta.id;
+}
+
+async function update_file(file_id, raw_data) 
+{
+    const data = new FormData();
+    data.append(file_id, raw_data);
+    
+    const rsp = await Wappsto.request.put(
+        `/2.1/file/${file_id}`,
+        data,
+        {
+          headers: {
+            'Content-Type': 'multipart/form-data'
+          }
+        });
+}
+
+function getCookie(cookieName) 
+{
+    let cookie = {};
+    document.cookie.split(';').forEach(function(el) {
+      let [key,value] = el.split('=');
+      cookie[key.trim()] = value;
+    })
+    return cookie[cookieName];
 }
 
 function brightnessControl()

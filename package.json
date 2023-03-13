@@ -3,6 +3,6 @@
     "wappsto-cli": "^2.0.10"
   },
   "dependencies": {
-    "wappsto-wapp": "^0.17.1"
+    "wappsto-wapp": "^0.17.2"
   }
 }
