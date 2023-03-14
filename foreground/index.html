@@ -82,17 +82,6 @@
             </label>
           </div>
         </label>
-        <!-- <fieldset>
-          <legend><strong>Bitmap type</strong></legend>
-          <label for="colorBitmap">
-            Color bitmap
-            <input type="radio" id="colorBitmap" name="radio" value="ColoredBitmap" checked="">
-          </label>
-          <label for="monoBitmap">
-            Mono bitmap
-            <input type="radio" id="monoBitmap" name="radio" value="MonochromeBitmap">
-          </label>
-        </fieldset> -->
         <label for="bitmapColors">
           <h6>Mono bitmap colors</h6>
           <div id="bitmapColors">
@@ -106,8 +95,8 @@
             </label>
           </div>
         </label>
-        <input id="file" type="file" accept=".bmp,.xbm,.jpg" name="file">
-        <button onclick="">
+        <input id="file" type="file" accept=".bmp,.jpg,.png,.webp,.xbm" name="file">
+        <button onclick="sendBitmapToScreen()">
           Send to screen
         </button>
       </form>
@@ -117,11 +106,8 @@
   <!-- <footer class="container"></footer> -->
 </body>
 
-<script src="https://cdn.jsdelivr.net/npm/wappsto-wapp@latest/dist/wappsto-wapp.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/wappsto-wapp@0.17.3/dist/wappsto-wapp.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/p5@1.5.0/lib/p5.js"></script>
 <script src="main.js"></script>
-<!-- <script>
-    setup();
-  </script> -->
 
 </html>

@@ -229,7 +229,8 @@ const getBitmapInputData = (bitmap) =>
     h: parseInt(getValue("bitmapHeight")),
     color: "0xffff",
     bColor: "0",
-    bitmap
+    bitmap,
+    //url:bitmap,
 });
 
 async function getValues()
@@ -266,6 +267,7 @@ fileSelector.addEventListener('change', (e) =>
 {
     const file = fileSelector.files[0];
     const fileReader = new FileReader();
+    console.log(file);
 
     fileReader.readAsArrayBuffer(file);
     fileReader.onload = handleFileLoad;
@@ -277,30 +279,31 @@ function handleFileLoad(e)
     const imageBlob = new Blob([arrayBuffer])
     const img = new Image();
     img.src = URL.createObjectURL(imageBlob);
-  
+
     img.onload = function() 
     {
-      const targetWidth = parseInt(getValue("bitmapWidth"));
-      const targetHeight = parseInt(getValue("bitmapHeight"));
+        const targetWidth = parseInt(getValue("bitmapWidth"));
+        const targetHeight = parseInt(getValue("bitmapHeight"));
 
-      const offscreen = new OffscreenCanvas(targetWidth,targetHeight);
-      const ctx = offscreen.getContext("2d");
-  
-      createImageBitmap(imageBlob, {
-        resizeWidth:targetWidth,
-        resizeHeight:targetWidth,
-      }).then(bitmap =>
-        {
-            ctx.drawImage(bitmap,0,0,targetWidth,targetHeight);
-            const imageData = ctx.getImageData(0,0,targetWidth,targetHeight);
-            const bitmapData = getBitmapData(imageData);
-            const rgb565Bitmap = getRGBBitmap(bitmapData);
+        const offscreen = new OffscreenCanvas(targetWidth,targetHeight);
+        const ctx = offscreen.getContext("2d");
         
-            drawRGBBitmap(getBitmapInputData(rgb565Bitmap));//drawing image preview
-            
-            const outputImageBlob = new Blob([rgb565Bitmap])
-            outputImage = new File([outputImageBlob], "output.bmp",{type:"image/bmp"});
-        });
+        createImageBitmap(imageBlob, 
+        {
+            resizeWidth:targetWidth,
+            resizeHeight:targetWidth,
+        }).then(bitmap =>
+            {
+                ctx.drawImage(bitmap,0,0,targetWidth,targetHeight);
+                const imageData = ctx.getImageData(0,0,targetWidth,targetHeight);
+                const bitmapData = getBitmapData(imageData);
+                const rgb565Bitmap = getRGBBitmap(bitmapData);
+
+                drawRGBBitmap(getBitmapInputData(rgb565Bitmap));//drawing image preview
+                
+                const outputImageBlob = new Blob([rgb565Bitmap])
+                outputImage = new File([outputImageBlob], "output.bmp",{type:"image/bmp"});
+            });
     };
 }
 
@@ -384,24 +387,27 @@ function sendToScreen(object)
   displayTextValue[0].control(JSON.stringify(config));
 }
 
-async function sendBitmapToScreen()
+async function sendBitmapToScreen()   
 {
-    const data = storage.get("imageID");
-    const sessionID = getCookie('sessionID');
+    let imageID;
+    let data = storage.get("imageID");
+    const sessionID = Wappsto.session; //getSession('sessionID');
 
     if(data == undefined)
     {
-        const imgId = createFile("img", outputImage);
-        await storage.set("imageId",imgId);
-        
+        imageID = await createFile("img", outputImage);
+        await storage.set("imageID",imageID);       
+    }
+    else
+    {
+        imageID = data;
+        await updateFile(imageID, outputImage);
     }
 
-    console.log('https://wappsto.com/services/2.1/file/${imgId}?X_session=${sessionID}');
+    console.log(`https://wappsto.com/services/2.1/file/${imageID}?X-session=${sessionID}`);
 
-    displayRgbBitmapValue[0].control(
-        JSON.stringify(
-            getBitmapInputData(
-                {bitmap:'https://wappsto.com/services/2.1/file/${imgId}?X_session=${sessionID}'})));
+    displayRgbBitmapValue[0].control(JSON.stringify(getBitmapInputData(
+        `https://wappsto.com/services/2.1/file/${imageID}?X-session=${sessionID}`)));
 }
 
 async function createFile(file_name, raw_data) 
@@ -434,17 +440,6 @@ async function updateFile(file_id, raw_data)
             'Content-Type': 'multipart/form-data'
           }
         });
-}
-
-function getCookie(cookieName) 
-{
-    let cookie = {};
-    document.cookie.split(';').forEach(function(el) 
-    {
-      let [key,value] = el.split('=');
-      cookie[key.trim()] = value;
-    })
-    return cookie[cookieName];
 }
 
 function brightnessControl()
