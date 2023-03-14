@@ -313,11 +313,22 @@ function getBitmapData(imageData)
     let j = 0;
     for(let i = 0; i < imageData.data.length; i += 4) 
     {
-      bitmapData[j] = imageData.data[i];
-      bitmapData[j + 1] = imageData.data[i + 1];
-      bitmapData[j + 2] = imageData.data[i + 2];
+    //   bitmapData[j] = imageData.data[i];
+    //   bitmapData[j + 1] = imageData.data[i + 1];
+    //   bitmapData[j + 2] = imageData.data[i + 2];
+      const r = imageData.data[i];
+      const g = imageData.data[i+1];
+      const b = imageData.data[i+2];
+
+      const alpha = imageData.data[i+3]/255;
+
+      bitmapData[j]     = ((1 - alpha) * 255) + (alpha * r);
+      bitmapData[j + 1] = ((1 - alpha) * 255) + (alpha * g);
+      bitmapData[j + 2] = ((1 - alpha) * 255) + (alpha * b);
+      
       j += 3
     }
+    console.log(bitmapData);
     return bitmapData;
 }
 
