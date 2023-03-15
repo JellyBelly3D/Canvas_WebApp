@@ -191,6 +191,8 @@ let outputImage;
 
 const getValue = (id) => document.getElementById(id).value;
 
+const allFormElements = document.querySelectorAll('form');
+const bitmapPanelForm = document.getElementById('bitmapPanelForm');
 const textPanelForm = document.getElementById('textPanelForm');
 const brightnessSlider = document.getElementById('brightness');
 const fileSelector = document.getElementById('file');
@@ -243,13 +245,26 @@ async function getValues()
     displayTextValue = displayDevice[0].findValueByName("Text input");
 
     storage = await Wappsto.wappStorage();
+
+    brightnessSlider.value = displayBrightnessValue[0].getReportData();
 }
-// Preventing textPanelForm from submitting upon 'Enter' keypress
-textPanelForm.addEventListener('keydown', (e) => 
+// Preventing Forms from submitting upon 'Enter' keypress
+allFormElements.forEach((e) => 
 {
-    if (e.key === 'Enter' && e.target !== document.getElementById("textInput")) 
+    e.addEventListener('keydown', (e) => 
     {
-        e.preventDefault();
+        if (e.key === 'Enter' && e.target !== document.getElementById("textInput")) 
+        {
+            e.preventDefault();
+        }
+    });
+});
+
+bitmapPanelForm.addEventListener('change', (e) =>
+{
+    if(!outputImage)
+    {
+        console.log("yaebal");
     }
 });
 // Draw text upon changes in text area elements
@@ -313,18 +328,15 @@ function getBitmapData(imageData)
     let j = 0;
     for(let i = 0; i < imageData.data.length; i += 4) 
     {
-    //   bitmapData[j] = imageData.data[i];
-    //   bitmapData[j + 1] = imageData.data[i + 1];
-    //   bitmapData[j + 2] = imageData.data[i + 2];
       const r = imageData.data[i];
       const g = imageData.data[i+1];
       const b = imageData.data[i+2];
 
       const alpha = imageData.data[i+3]/255;
-
-      bitmapData[j]     = ((1 - alpha) * 255) + (alpha * r);
-      bitmapData[j + 1] = ((1 - alpha) * 255) + (alpha * g);
-      bitmapData[j + 2] = ((1 - alpha) * 255) + (alpha * b);
+      //black background
+      bitmapData[j]     = ((1 - alpha) * 0) + (alpha * r);
+      bitmapData[j + 1] = ((1 - alpha) * 0) + (alpha * g);
+      bitmapData[j + 2] = ((1 - alpha) * 0) + (alpha * b);
       
       j += 3
     }
@@ -402,7 +414,7 @@ async function sendBitmapToScreen()
 {
     let imageID;
     let data = storage.get("imageID");
-    const sessionID = Wappsto.session; //getSession('sessionID');
+    const sessionID = Wappsto.session;
 
     if(data == undefined)
     {
@@ -415,10 +427,25 @@ async function sendBitmapToScreen()
         await updateFile(imageID, outputImage);
     }
 
-    console.log(`https://wappsto.com/services/2.1/file/${imageID}?X-session=${sessionID}`);
+    const bitmapUrl = `https://wappsto.com/services/2.1/file/${imageID}?X-session=${sessionID}`;
 
-    displayRgbBitmapValue[0].control(JSON.stringify(getBitmapInputData(
-        `https://wappsto.com/services/2.1/file/${imageID}?X-session=${sessionID}`)));
+    const jsonObject = JSON.stringify(getBitmapInputData(bitmapUrl));
+
+    const result = await displayRgbBitmapValue[0].controlWithAck(jsonObject);
+    
+    // if(!result)
+    // {
+    //     console.warn("JSON delivered:",result);
+    // }
+
+    if (displayRgbBitmapValue[0].getReportData() !== 'Success')
+    {
+        console.warn("Display report:",displayRgbBitmapValue[0].getReportData());
+    }
+    else
+    {
+        console.log(displayRgbBitmapValue[0].getReportData());
+    }
 }
 
 async function createFile(file_name, raw_data) 
@@ -494,7 +521,7 @@ class Pixel {
     constructor(x, y, c) {
         this.show = function () {
             fill(c);
-            stroke(0); //pixel border color
+            stroke(40); //pixel border color
             rect(x * boxSize, y * boxSize, boxSize, boxSize);
         };
     }
@@ -635,7 +662,7 @@ function drawXBitmap({x=0,y=0,bitmap,w=64,h=64,c=255})
 
 function drawRGBBitmap({x=0,y=0,bitmap,w=0,h=0})
 {
-    fillRect(x,y,w,h,'#ffffff');
+    fillRect(x,y,w,h,51);
 
     for(let j = 0; j < h; j++, y++)
     {
