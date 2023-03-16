@@ -47,13 +47,14 @@
           <input type="color" id="backgroundColor" name="backgroundColor" value="#454545" />
         </div>
         <button onclick="sendToScreen(getTextInputData())">
-          Send to screen
+          Send to Screen
         </button>
       </form>
     </div>
     <div id="canvas-area">
-      <div>
-        <button onclick="clearScreen()">Clear Screen</button>
+      <div class="grid">
+        <button onclick="fillScreen()">Clear Preview</button>
+        <button onclick="clearScreen()">Clear Matrix Screen</button>
       </div>
       <div id="canvas-holder"></div>
       <label for="brightness">
@@ -96,8 +97,8 @@
           </div>
         </label>
         <input id="file" type="file" accept=".bmp,.jpg,.png,.webp,.xbm,.avif,.ico" name="file">
-        <button onclick="sendBitmapToScreen()">
-          Send to screen
+        <button aria-busy="false" id="sendBitmapBtn" onclick="sendBitmapToScreen()">
+          Send to Screen
         </button>
       </form>
     </div>

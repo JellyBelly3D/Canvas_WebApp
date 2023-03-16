@@ -4,65 +4,14 @@ const charHeight = 8;
 const screenWidth = 64;
 const screenHeight = 64;
 
-const monoCat = new Uint8ClampedArray([
-    0x00, 0x00, 0xFE, 0x1F, 0x00, 0x00, 0x00, 0x00, 0x00, 0xC0, 0xFF, 0x7F, 
-    0x00, 0x00, 0x00, 0x00, 0x00, 0xF0, 0xFF, 0xFF, 0x01, 0x00, 0x00, 0x00, 
-    0x00, 0xF8, 0xFF, 0xFF, 0x03, 0x00, 0x00, 0x00, 0x00, 0xFC, 0xFF, 0xFF, 
-    0x07, 0x00, 0x00, 0x00, 0x00, 0xFE, 0x07, 0xF8, 0x07, 0x00, 0x00, 0x00, 
-    0x00, 0xFE, 0x01, 0xE0, 0x0F, 0x00, 0x00, 0x00, 0x00, 0xFF, 0x00, 0xC0, 
-    0x0F, 0x00, 0x00, 0x00, 0x00, 0x7F, 0x00, 0x80, 0x0F, 0x00, 0x00, 0x00, 
-    0x80, 0x3F, 0x00, 0x06, 0x0F, 0x00, 0x00, 0x00, 0x80, 0x1F, 0xC0, 0x1F, 
-    0x00, 0x00, 0x00, 0x00, 0x80, 0x1F, 0xF0, 0x1F, 0x00, 0x00, 0x00, 0x00, 
-    0x80, 0x1F, 0xF8, 0x3F, 0x00, 0x00, 0x00, 0x00, 0x80, 0x1F, 0xFC, 0x7F, 
-    0x00, 0x00, 0x00, 0x00, 0x80, 0x1F, 0xFE, 0xFF, 0x60, 0x00, 0x80, 0x00, 
-    0x80, 0x1F, 0xFF, 0xFF, 0x70, 0x00, 0xC0, 0x00, 0x80, 0xBF, 0xFF, 0xFF, 
-    0xF1, 0x00, 0xE0, 0x00, 0x80, 0xFF, 0xFF, 0xFF, 0xF9, 0x01, 0xF0, 0x01, 
-    0x00, 0xFF, 0xFF, 0xFF, 0xF9, 0x01, 0xF8, 0x01, 0x00, 0xFF, 0xFF, 0xFF, 
-    0xF9, 0xF3, 0xFC, 0x01, 0x00, 0xFE, 0xFF, 0xFF, 0xFD, 0xFF, 0xFF, 0x01, 
-    0x00, 0xFC, 0xFF, 0xFF, 0xFD, 0xFF, 0xFF, 0x01, 0x00, 0xF8, 0xFF, 0xFF, 
-    0xFD, 0xFF, 0xFF, 0x01, 0x00, 0xF8, 0xFF, 0xFF, 0xFD, 0xFF, 0xFF, 0x01, 
-    0x00, 0xFC, 0xFF, 0xFF, 0xFD, 0xFF, 0xFF, 0x01, 0x00, 0xFC, 0xFF, 0xFF, 
-    0xFD, 0xFF, 0xFF, 0x01, 0x00, 0xFC, 0xFF, 0xFF, 0xFD, 0xFF, 0xEF, 0x01, 
-    0x00, 0xFC, 0xFF, 0xFF, 0xFD, 0xFD, 0xFF, 0x01, 0x00, 0xFE, 0xFF, 0xFF, 
-    0xFD, 0xFF, 0xF5, 0x01, 0x00, 0xFE, 0xFF, 0xFF, 0xF9, 0xFF, 0xFF, 0x01, 
-    0x00, 0xFE, 0xFF, 0xFF, 0xFB, 0xFF, 0xFF, 0x00, 0x00, 0xFE, 0xFF, 0xFF, 
-    0xFB, 0xFF, 0xFF, 0x00, 0x00, 0xFE, 0xFF, 0xFF, 0xF7, 0xFF, 0xFF, 0x00, 
-    0x00, 0xFE, 0xFF, 0xFF, 0xFF, 0xFF, 0x7F, 0x00, 0x00, 0xFE, 0xFF, 0xFF, 
-    0xFF, 0xFF, 0x3F, 0x00, 0x00, 0xFE, 0x9F, 0xFF, 0xFF, 0xFF, 0x3F, 0x00, 
-    0x00, 0xFE, 0x0F, 0xFF, 0xFF, 0xFF, 0x0F, 0x00, 0x00, 0xFE, 0x07, 0xFE, 
-    0xFF, 0xFF, 0x07, 0x00, 0x00, 0xFE, 0x07, 0xFE, 0xFF, 0xFF, 0x01, 0x00, 
-    0x00, 0xFE, 0x07, 0xFC, 0xFF, 0xFF, 0x01, 0x00, 0x00, 0xFE, 0x03, 0xFC, 
-    0xFF, 0xFF, 0x01, 0x00, 0x00, 0xFE, 0x03, 0xFC, 0x9F, 0xFF, 0x01, 0x00, 
-    0x00, 0xFE, 0x03, 0xFC, 0x0F, 0xFF, 0x01, 0x00, 0x00, 0xFE, 0x03, 0xFC, 
-    0x0F, 0xFF, 0x01, 0x00, 0x00, 0xFC, 0x01, 0xFC, 0x0F, 0xFF, 0x01, 0x00, 
-    0x00, 0xFC, 0x01, 0xFC, 0x07, 0xFE, 0x01, 0x00, 0x00, 0xFC, 0x01, 0xFC, 
-    0x07, 0xFE, 0x01, 0x00, 0x00, 0xFC, 0x01, 0xF8, 0x07, 0xFE, 0x01, 0x00, 
-    0x00, 0xFC, 0x01, 0xF8, 0x03, 0xFE, 0x01, 0x00, 0x00, 0xFC, 0x01, 0xF8, 
-    0x03, 0xFE, 0x01, 0x00, 0x00, 0xFC, 0x00, 0xF8, 0x03, 0xFE, 0x00, 0x00, 
-    0x00, 0xFC, 0x00, 0xF8, 0x03, 0xFE, 0x00, 0x00, 0x00, 0xFC, 0x00, 0xF8, 
-    0x03, 0xFC, 0x00, 0x00, 0x00, 0xFC, 0x00, 0xF8, 0x01, 0xFC, 0x00, 0x00, 
-    0x00, 0xFC, 0x00, 0xF8, 0x01, 0xFC, 0x00, 0x00, 0x00, 0xFC, 0x00, 0xF8, 
-    0x01, 0xFC, 0x00, 0x00, 0x00, 0xFC, 0x00, 0xF8, 0x01, 0xFC, 0x00, 0x00, 
-    0x00, 0xFC, 0x00, 0xF8, 0x01, 0xFC, 0x00, 0x00, 0x00, 0xFC, 0x00, 0xF8, 
-    0x00, 0xFC, 0x00, 0x00, 0x00, 0x7C, 0x00, 0xF8, 0x00, 0xFC, 0x00, 0x00, 
-    0x00, 0x7C, 0x00, 0xF8, 0x00, 0xFC, 0x00, 0x00, 0x00, 0x78, 0x00, 0xF8, 
-    0x00, 0xFC, 0x00, 0x00, 0x00, 0x78, 0x00, 0xF8, 0x00, 0xF8, 0x00, 0x00, 
-    0x00, 0x78, 0x00, 0x78, 0x00, 0xF8, 0x00, 0x00,]);
+const fileSelector = document.getElementById('file');
+const allFormElements = document.querySelectorAll('form');
+const allInputElements = document.querySelectorAll('input');
+const brightnessSlider = document.getElementById('brightness');
+const textPanelForm = document.getElementById('textPanelForm');
+const bitmapPanelForm = document.getElementById('bitmapPanelForm');
 
-const lilIcon = new Uint8ClampedArray([
-    0x07, 0xe0, 
-    0x08, 0x10, 
-    0x13, 0xc8, 
-    0x24, 0x24, 
-    0x49, 0x92, 
-    0x92, 0x49,
-    0xa4, 0x25, 
-    0x01, 0x80, 
-    0x03, 0xc0, 
-    0x03, 0xc0, 
-    0x01, 0x80, 
-    0x00, 0x00
-]);
+const getValue = (id) => document.getElementById(id).value;
 
 const classicAdafruitFont = [
     0x00, 0x00, 0x00, 0x00, 0x00, 0x3E, 0x5B, 0x4F, 0x5B, 0x3E, 0x3E, 0x6B,
@@ -180,36 +129,14 @@ const classicAdafruitFont = [
     0x3C, 0x00, 0x00, 0x00, 0x00, 0x00 // #255 NBSP
 ];
 
-let displayNetwork;
-let displayDevice;
-let displayMonoBitmapValue;
-let displayRgbBitmapValue;
-let displayTextValue;
-let storage;
-
 let outputImage;
 
-const getValue = (id) => document.getElementById(id).value;
-
-const allFormElements = document.querySelectorAll('form');
-const bitmapPanelForm = document.getElementById('bitmapPanelForm');
-const textPanelForm = document.getElementById('textPanelForm');
-const brightnessSlider = document.getElementById('brightness');
-const fileSelector = document.getElementById('file');
-
-const defaultConfig = {
-    x: 0,//getValue("xPos"),
-    y: 0,//getValue("yPos"),
-    w: 0,//getValue("canvasWidth"),
-    h: 0,//getValue("canvasHeight"),
-};
-
-const textInputConfig = {
-    tColor: "0xffff",//getValue("textColor"),
-    bColor: "0",//getValue("backgroundColor"),
-    tSize:  1,//getValue("textSize"),
-    text:   "",//getValue("textInput"),
-};
+let storage;
+let displayDevice;
+let displayNetwork;
+let displayTextValue;
+let displayMonoBitmapValue;
+let displayRgbBitmapValue;
 
 const getTextInputData =() =>
 ({
@@ -247,8 +174,21 @@ async function getValues()
     storage = await Wappsto.wappStorage();
 
     brightnessSlider.value = displayBrightnessValue[0].getReportData();
+
+    displayRgbBitmapValue[0].onReport((value, data, timestamp) =>
+    {
+        console.log("Got a report:",data);
+    })
 }
-// Preventing Forms from submitting upon 'Enter' keypress
+// Preventing number input fields from changing values on scroll
+allInputElements.forEach((e) =>
+{
+    e.addEventListener('wheel', (e) =>
+    {
+        e.preventDefault();
+    });
+})
+// Preventing Forms from submitting on 'Enter' keypress and allowing newlines in "textInput" element
 allFormElements.forEach((e) => 
 {
     e.addEventListener('keydown', (e) => 
@@ -262,9 +202,16 @@ allFormElements.forEach((e) =>
 
 bitmapPanelForm.addEventListener('change', (e) =>
 {
-    if(!outputImage)
+    if(outputImage)
     {
-        console.log("yaebal");
+        console.log("Image exists");
+
+        const file = fileSelector.files[0];
+        const fileReader = new FileReader();
+
+        fileReader.readAsArrayBuffer(file);
+        console.log("File:",file);
+        fileReader.onload = handleFileLoad;
     }
 });
 // Draw text upon changes in text area elements
@@ -290,13 +237,14 @@ fileSelector.addEventListener('change', (e) =>
 
 function handleFileLoad(e) 
 {
-    const arrayBuffer = e.target.result;
-    const imageBlob = new Blob([arrayBuffer])
+    //let isImageConverted = false;
     const img = new Image();
-    img.src = URL.createObjectURL(imageBlob);
-
+    const imgBuffer = e.target.result;
+    const imageBlob = new Blob([imgBuffer]);
+    
     img.onload = function() 
     {
+        isImageConverted = true;
         const targetWidth = parseInt(getValue("bitmapWidth"));
         const targetHeight = parseInt(getValue("bitmapHeight"));
 
@@ -306,23 +254,33 @@ function handleFileLoad(e)
         createImageBitmap(imageBlob, 
         {
             resizeWidth:targetWidth,
-            resizeHeight:targetWidth,
+            resizeHeight:targetHeight,
         }).then(bitmap =>
             {
                 ctx.drawImage(bitmap,0,0,targetWidth,targetHeight);
                 const imageData = ctx.getImageData(0,0,targetWidth,targetHeight);
-                const bitmapData = getBitmapData(imageData);
+                const bitmapData = rgbaToRgb(imageData);
                 const rgb565Bitmap = getRGBBitmap(bitmapData);
 
                 drawRGBBitmap(getBitmapInputData(rgb565Bitmap));//drawing image preview
                 
                 const outputImageBlob = new Blob([rgb565Bitmap])
-                outputImage = new File([outputImageBlob], "output.bmp",{type:"image/bmp"});
+                outputImage = new File([outputImageBlob], "output.bmp",{type:'image/bmp'});
+                console.log(outputImage);
             });
     };
+
+    img.src = URL.createObjectURL(imageBlob);
+
+    // if(!isImageConverted)
+    // {
+    //     console.log("huh?");
+    //     const bitmap = new Int16Array(imgBuffer);
+    //     drawRGBBitmap(getBitmapInputData(bitmap));
+    // }
 }
 
-function getBitmapData(imageData) 
+function rgbaToRgb(imageData)
 {
     const bitmapData = new Uint8ClampedArray(Math.ceil(imageData.data.length/4)*3);
     let j = 0;
@@ -340,11 +298,11 @@ function getBitmapData(imageData)
       
       j += 3
     }
-    console.log(bitmapData);
+    //console.log(bitmapData);
     return bitmapData;
 }
 
-function getRGBBitmap(bitmapData) 
+function getRGBBitmap(bitmapData)
 {
     const rgb565Bitmap = new Uint16Array(Math.ceil(bitmapData.length/3));
     let j = 0;
@@ -410,7 +368,7 @@ function sendToScreen(object)
   displayTextValue[0].control(JSON.stringify(config));
 }
 
-async function sendBitmapToScreen()   
+async function sendBitmapToScreen()
 {
     let imageID;
     let data = storage.get("imageID");
@@ -431,24 +389,10 @@ async function sendBitmapToScreen()
 
     const jsonObject = JSON.stringify(getBitmapInputData(bitmapUrl));
 
-    const result = await displayRgbBitmapValue[0].controlWithAck(jsonObject);
-    
-    // if(!result)
-    // {
-    //     console.warn("JSON delivered:",result);
-    // }
-
-    if (displayRgbBitmapValue[0].getReportData() !== 'Success')
-    {
-        console.warn("Display report:",displayRgbBitmapValue[0].getReportData());
-    }
-    else
-    {
-        console.log(displayRgbBitmapValue[0].getReportData());
-    }
+    displayRgbBitmapValue[0].control(jsonObject);
 }
 
-async function createFile(file_name, raw_data) 
+async function createFile(file_name, raw_data)
 {
     const data = new FormData();
     data.append(file_name, raw_data);
@@ -465,7 +409,7 @@ async function createFile(file_name, raw_data)
     return rsp.data.meta.id;
 }
 
-async function updateFile(file_id, raw_data) 
+async function updateFile(file_id, raw_data)
 {
     const data = new FormData();
     data.append(file_id, raw_data);
@@ -485,7 +429,7 @@ function brightnessControl()
     displayBrightnessValue[0].control(brightnessSlider.value);
 }
 
-function setup() 
+function setup()
 {
     let canvas = createCanvas(screenWidth * boxSize, screenHeight * boxSize);
     canvas.parent('canvas-holder');
@@ -517,9 +461,12 @@ function setup()
     }
 }
 
-class Pixel {
-    constructor(x, y, c) {
-        this.show = function () {
+class Pixel
+{
+    constructor(x, y, c) 
+    {
+        this.show = function () 
+        {
             fill(c);
             stroke(40); //pixel border color
             rect(x * boxSize, y * boxSize, boxSize, boxSize);
@@ -544,15 +491,13 @@ function fillRect(x,y,w,h,c)
     }
 }
 
-function fillScreen(c)
+function fillScreen()
 {
-    fillRect(0,0,screenWidth,screenHeight,c);
+    fillRect(0,0,screenWidth,screenHeight,51);
 }
 
 function clearScreen()
 {
-    fillRect(0,0,screenWidth,screenHeight,51);
-
     let scrnClr = {
         x: 0,
         y: 0,
@@ -567,7 +512,7 @@ function clearScreen()
     displayTextValue[0].control(JSON.stringify(scrnClr));
 }
 
-function drawChar(char, x, y, tSize, c) 
+function drawChar(char, x, y, tSize, c)
 {
     if (char === undefined || char === null) {
         console.error("Invalid value for 'char' parameter", char);
