@@ -134,6 +134,7 @@ const classicAdafruitFont = [
 let grid;
 let storage;
 let imageBlob;
+//let converted;
 let bitmapData;
 let displayDevice;
 let displayNetwork;
@@ -204,14 +205,12 @@ allFormElements.forEach((e) =>
     });
 });
 
-bitmapPanelForm.addEventListener('change', async (e) =>
+bitmapPanelForm.addEventListener('change', (e) =>
 {
-    if(bitmapData)
+    if(bitmapData) //convert preview image only if image has been loaded
     {
-        //fires when selecting a file since fileSelector is a part of bitmapPanelForm 
-        //this is not intended and needs fixing
         const img = new Image();
-        await handleImageLoad(img);
+        handleImageLoad();
         img.src = URL.createObjectURL(imageBlob);
     }
 });
@@ -236,25 +235,18 @@ fileSelector.addEventListener('change', (e) =>
     fileReader.onload = handleFileLoad;
 });
 
-async function handleFileLoad(e) 
+function handleFileLoad(e) 
 {
     const img = new Image();
     const imgBuffer = e.target.result;
     imageBlob = new Blob([imgBuffer]);
     
-    await handleImageLoad(img);
+    handleImageLoad();
 
     img.src = URL.createObjectURL(imageBlob);
-
-    // if(!img.complete)
-    // {
-    //     //the input image was already converted
-    //     const bitmap = new Int16Array(imgBuffer);
-    //     drawRGB565Bitmap(getBitmapInputData(bitmap));
-    // }
 }
 
-async function handleImageLoad(img)
+function handleImageLoad()
 {
     const targetWidth = parseInt(getValue("bitmapWidth"));
     const targetHeight = parseInt(getValue("bitmapHeight"));
@@ -262,23 +254,37 @@ async function handleImageLoad(img)
     const offscreen = new OffscreenCanvas(targetWidth,targetHeight);
     const ctx = offscreen.getContext("2d");
     
-    const bitmap = await createImageBitmap(imageBlob, 
+    createImageBitmap(imageBlob, 
     {
         resizeWidth:targetWidth,
         resizeHeight:targetHeight,
+    })
+    .then(resizedImageBitmap =>
+    {
+        ctx.drawImage(resizedImageBitmap,0,0,targetWidth,targetHeight);
+        const imageData = ctx.getImageData(0,0,targetWidth,targetHeight);
+        bitmapData = rgbaToRgb(imageData);
+    
+        drawRGBBitmap(getBitmapInputData(bitmapData));//drawing image preview
+
+        //converted = false;
+    })
+    .catch(async () =>
+    {
+        console.log("Previously converted image input");
+
+        const imgBuffer = await imageBlob.arrayBuffer();
+        const bitmap565 = new Int16Array(imgBuffer);
+        drawRGB565Bitmap(getBitmapInputData(bitmap565));
+
+        //converted = true;
     });
-
-    ctx.drawImage(bitmap,0,0,targetWidth,targetHeight);
-    const imageData = ctx.getImageData(0,0,targetWidth,targetHeight);
-    bitmapData = rgbaToRgb(imageData);
-
-    drawRGBBitmap(getBitmapInputData(bitmapData));//drawing image preview
 }
 
 /**
  * 
  * @param {number[]} bitmapData 
- * @returns {File} image data
+ * @returns {File} image file
  */
 function bitmapToFile(bitmapData)
 {
@@ -383,13 +389,13 @@ async function sendBitmapToScreen()
 
     if(data == undefined)
     {
-        imageID = await createFile("img", bitmapToFile(bitmapData));
+        imageID = await createFileOnWebApp("img", bitmapToFile(bitmapData));
         await storage.set("imageID",imageID);       
     }
     else
     {
         imageID = data;
-        await updateFile(imageID, bitmapToFile(bitmapData));
+        await updateFileOnWebApp(imageID, bitmapToFile(bitmapData));
     }
 
     const bitmapUrl = `https://wappsto.com/services/2.1/file/${imageID}?X-session=${sessionID}`;
@@ -399,7 +405,7 @@ async function sendBitmapToScreen()
     displayRgbBitmapValue[0].control(jsonObject);
 }
 
-async function createFile(file_name, raw_data)
+async function createFileOnWebApp(file_name, raw_data)
 {
     const data = new FormData();
     data.append(file_name, raw_data);
@@ -416,7 +422,7 @@ async function createFile(file_name, raw_data)
     return rsp.data.meta.id;
 }
 
-async function updateFile(file_id, raw_data)
+async function updateFileOnWebApp(file_id, raw_data)
 {
     const data = new FormData();
     data.append(file_id, raw_data);
