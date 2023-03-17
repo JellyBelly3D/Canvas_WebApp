@@ -46,7 +46,7 @@
           <label for="backgroundColor">Background color</label>
           <input type="color" id="backgroundColor" name="backgroundColor" value="#454545" />
         </div>
-        <button onclick="sendToScreen(getTextInputData())">
+        <button onclick="sendTextToScreen(getTextInputData())">
           Send to Screen
         </button>
       </form>
@@ -76,10 +76,10 @@
           </div>
           <div class="grid">
             <label for="bitmapWidth">Bitmap width (1-64)
-              <input type="number" id="bitmapWidth" name="bitmapWidth" min="0" max="64" value="64" />
+              <input type="number" id="bitmapWidth" name="bitmapWidth" min="1" max="64" value="64" />
             </label>
             <label for="bitmapHeight">Bitmap height (1-64)
-              <input type="number" id="bitmapHeight" name="bitmapHeight" min="0" max="64" value="64" />
+              <input type="number" id="bitmapHeight" name="bitmapHeight" min="1" max="64" value="64" />
             </label>
           </div>
         </label>
@@ -96,7 +96,6 @@
             </label>
           </div>
         </label>
-        
       </form>
       <input id="file" type="file" accept=".bmp,.jpg,.png,.webp,.xbm,.avif,.ico" name="file">
         <button aria-busy="false" id="sendBitmapBtn" onclick="sendBitmapToScreen()">

@@ -1,5 +1,6 @@
 {
   "devDependencies": {
+    "eslint": "^8.36.0",
     "wappsto-cli": "^2.0.10"
   },
   "dependencies": {

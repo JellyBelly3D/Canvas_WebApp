@@ -1,3 +1,4 @@
+/* eslint-disable no-undef */
 "use strict";
 
 const boxSize = 10;
@@ -9,8 +10,8 @@ const screenHeight = 64;
 const fileSelector = document.getElementById('file');
 const allFormElements = document.querySelectorAll('form');
 const allInputElements = document.querySelectorAll('input');
-const brightnessSlider = document.getElementById('brightness');
 const textPanelForm = document.getElementById('textPanelForm');
+const brightnessSlider = document.getElementById('brightness');
 const bitmapPanelForm = document.getElementById('bitmapPanelForm');
 
 const getValue = (id) => document.getElementById(id).value;
@@ -140,7 +141,7 @@ let displayDevice;
 let displayNetwork;
 let displayTextValue;
 let displayRgbBitmapValue;
-let displayMonoBitmapValue;
+//let displayMonoBitmapValue;
 let displayBrightnessValue;
 
 const getTextInputData =() =>
@@ -166,12 +167,12 @@ const getBitmapInputData = (bitmap) =>
     bitmap,
     //url:bitmap,
 });
-
+// eslint-disable-next-line no-unused-vars
 async function getValues()
 {
     displayNetwork = await Wappsto.Network.findByName("Display 64x64");
     displayDevice = displayNetwork[0].findDeviceByName("Display");
-    displayMonoBitmapValue = displayDevice[0].findValueByName("Mono Bitmap");
+    //displayMonoBitmapValue = displayDevice[0].findValueByName("Mono Bitmap");
     displayRgbBitmapValue = displayDevice[0].findValueByName("RGB565 Bitmap");
     displayBrightnessValue = displayDevice[0].findValueByName("Brightness");
     displayTextValue = displayDevice[0].findValueByName("Text input");
@@ -182,7 +183,7 @@ async function getValues()
 
     displayRgbBitmapValue[0].onReport((value, data, timestamp) =>
     {
-        console.log("Got a report:",data);
+        console.log("Got a report:",data,timestamp);
     })
 }
 // Preventing number input fields from changing values on scroll
@@ -205,13 +206,11 @@ allFormElements.forEach((e) =>
     });
 });
 
-bitmapPanelForm.addEventListener('change', (e) =>
+bitmapPanelForm.addEventListener('change', () =>
 {
-    if(bitmapData) //convert preview image only if image has been loaded
+    if(bitmapData) //convert preview image only if image has already been loaded
     {
-        const img = new Image();
-        handleImageLoad();
-        img.src = URL.createObjectURL(imageBlob);
+        convertImage();
     }
 });
 // Draw text upon changes in text area elements
@@ -225,28 +224,21 @@ brightnessSlider.addEventListener('change', () =>
     brightnessControl();
 });
 
-fileSelector.addEventListener('change', (e) =>
+fileSelector.addEventListener('change', () =>
 {
     const file = fileSelector.files[0];
     const fileReader = new FileReader();
-    console.log(file);
 
     fileReader.readAsArrayBuffer(file);
-    fileReader.onload = handleFileLoad;
+    fileReader.onload = function(e)
+    {
+        const imgBuffer = e.target.result;
+        imageBlob = new Blob([imgBuffer]);
+        convertImage();
+    }
 });
 
-function handleFileLoad(e) 
-{
-    const img = new Image();
-    const imgBuffer = e.target.result;
-    imageBlob = new Blob([imgBuffer]);
-    
-    handleImageLoad();
-
-    img.src = URL.createObjectURL(imageBlob);
-}
-
-function handleImageLoad()
+function convertImage()
 {
     const targetWidth = parseInt(getValue("bitmapWidth"));
     const targetHeight = parseInt(getValue("bitmapHeight"));
@@ -271,8 +263,7 @@ function handleImageLoad()
     })
     .catch(async () =>
     {
-        console.log("Previously converted image input");
-
+        //console.log("Previously converted image input");
         const imgBuffer = await imageBlob.arrayBuffer();
         const bitmap565 = new Int16Array(imgBuffer);
         drawRGB565Bitmap(getBitmapInputData(bitmap565));
@@ -296,19 +287,19 @@ function bitmapToFile(bitmapData)
 
 function rgbaToRgb(imageData)
 {
-    const bitmapData = new Uint8ClampedArray(Math.ceil(imageData.data.length/4)*3);
+    const bitmapData = new Uint8ClampedArray(Math.ceil(imageData.data.length / 4) * 3);
     let j = 0;
     for(let i = 0; i < imageData.data.length; i += 4) 
     {
       const r = imageData.data[i];
-      const g = imageData.data[i+1];
-      const b = imageData.data[i+2];
+      const g = imageData.data[i + 1];
+      const b = imageData.data[i + 2];
 
-      const alpha = imageData.data[i+3]/255;
+      const alpha = imageData.data[i + 3] / 255;
       //black background
-      bitmapData[j]     = ((1 - alpha) * 0) + (alpha * r);
-      bitmapData[j + 1] = ((1 - alpha) * 0) + (alpha * g);
-      bitmapData[j + 2] = ((1 - alpha) * 0) + (alpha * b);
+      bitmapData[j]     = Math.round((1 - alpha) * 0) + (alpha * r);
+      bitmapData[j + 1] = Math.round((1 - alpha) * 0) + (alpha * g);
+      bitmapData[j + 2] = Math.round((1 - alpha) * 0) + (alpha * b);
       
       j += 3
     }
@@ -361,8 +352,8 @@ function convert16to24(color16)
     let b8 = Math.floor(b5 * 255 / 31 + 0.5);
     return `#${(r8 << 16 | g8 << 8 | b8).toString(16).padStart(6, "0")}`;
 }
-
-function sendToScreen(object)
+// eslint-disable-next-line no-unused-vars
+function sendTextToScreen(object)
 {
   //fix this, bad object creation, can be shorter
   let config = {
@@ -380,7 +371,7 @@ function sendToScreen(object)
 
   displayTextValue[0].control(JSON.stringify(config));
 }
-
+// eslint-disable-next-line no-unused-vars
 async function sendBitmapToScreen()
 {
     let imageID;
@@ -427,7 +418,7 @@ async function updateFileOnWebApp(file_id, raw_data)
     const data = new FormData();
     data.append(file_id, raw_data);
     
-    const rsp = await Wappsto.request.put(
+    await Wappsto.request.put(
         `/2.1/file/${file_id}`,
         data,
         {
@@ -441,7 +432,7 @@ function brightnessControl()
 {
     displayBrightnessValue[0].control(brightnessSlider.value);
 }
-
+// eslint-disable-next-line no-unused-vars
 function setup()
 {
     let canvas = createCanvas(screenWidth * boxSize, screenHeight * boxSize);
@@ -503,12 +494,12 @@ function fillRect(x,y,w,h,c)
         }
     }
 }
-
+// eslint-disable-next-line no-unused-vars
 function fillScreen()
 {
     fillRect(0,0,screenWidth,screenHeight,51);
 }
-
+// eslint-disable-next-line no-unused-vars
 function clearScreen()
 {
     let scrnClr = {
@@ -591,7 +582,7 @@ function drawText({x=0,y=0,text="",w=64,h=64,tColor=255,bColor=51,tSize=1})
         console.log("x",x,"y:",y,"Start x:", startXPos,"Line char limit",lineCharLimit,"Char written:", i);
     }
 }
-
+// eslint-disable-next-line no-unused-vars
 function drawXBitmap({x=0,y=0,bitmap,w=64,h=64,c=255})
 {
     const byteWidth = Math.floor((w + 7) / 8);
