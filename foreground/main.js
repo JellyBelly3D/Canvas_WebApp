@@ -1,3 +1,5 @@
+"use strict";
+
 const boxSize = 10;
 const charWidth = 5;
 const charHeight = 8;
@@ -129,14 +131,16 @@ const classicAdafruitFont = [
     0x3C, 0x00, 0x00, 0x00, 0x00, 0x00 // #255 NBSP
 ];
 
-let outputImage;
-
+let grid;
 let storage;
+let imageBlob;
+let bitmapData;
 let displayDevice;
 let displayNetwork;
 let displayTextValue;
-let displayMonoBitmapValue;
 let displayRgbBitmapValue;
+let displayMonoBitmapValue;
+let displayBrightnessValue;
 
 const getTextInputData =() =>
 ({
@@ -200,18 +204,15 @@ allFormElements.forEach((e) =>
     });
 });
 
-bitmapPanelForm.addEventListener('change', (e) =>
+bitmapPanelForm.addEventListener('change', async (e) =>
 {
-    if(outputImage)
+    if(bitmapData)
     {
-        console.log("Image exists");
-
-        const file = fileSelector.files[0];
-        const fileReader = new FileReader();
-
-        fileReader.readAsArrayBuffer(file);
-        console.log("File:",file);
-        fileReader.onload = handleFileLoad;
+        //fires when selecting a file since fileSelector is a part of bitmapPanelForm 
+        //this is not intended and needs fixing
+        const img = new Image();
+        await handleImageLoad(img);
+        img.src = URL.createObjectURL(imageBlob);
     }
 });
 // Draw text upon changes in text area elements
@@ -235,49 +236,56 @@ fileSelector.addEventListener('change', (e) =>
     fileReader.onload = handleFileLoad;
 });
 
-function handleFileLoad(e) 
+async function handleFileLoad(e) 
 {
-    //let isImageConverted = false;
     const img = new Image();
     const imgBuffer = e.target.result;
-    const imageBlob = new Blob([imgBuffer]);
+    imageBlob = new Blob([imgBuffer]);
     
-    img.onload = function() 
-    {
-        isImageConverted = true;
-        const targetWidth = parseInt(getValue("bitmapWidth"));
-        const targetHeight = parseInt(getValue("bitmapHeight"));
-
-        const offscreen = new OffscreenCanvas(targetWidth,targetHeight);
-        const ctx = offscreen.getContext("2d");
-        
-        createImageBitmap(imageBlob, 
-        {
-            resizeWidth:targetWidth,
-            resizeHeight:targetHeight,
-        }).then(bitmap =>
-            {
-                ctx.drawImage(bitmap,0,0,targetWidth,targetHeight);
-                const imageData = ctx.getImageData(0,0,targetWidth,targetHeight);
-                const bitmapData = rgbaToRgb(imageData);
-                const rgb565Bitmap = getRGBBitmap(bitmapData);
-
-                drawRGBBitmap(getBitmapInputData(rgb565Bitmap));//drawing image preview
-                
-                const outputImageBlob = new Blob([rgb565Bitmap])
-                outputImage = new File([outputImageBlob], "output.bmp",{type:'image/bmp'});
-                console.log(outputImage);
-            });
-    };
+    await handleImageLoad(img);
 
     img.src = URL.createObjectURL(imageBlob);
 
-    // if(!isImageConverted)
+    // if(!img.complete)
     // {
-    //     console.log("huh?");
+    //     //the input image was already converted
     //     const bitmap = new Int16Array(imgBuffer);
-    //     drawRGBBitmap(getBitmapInputData(bitmap));
+    //     drawRGB565Bitmap(getBitmapInputData(bitmap));
     // }
+}
+
+async function handleImageLoad(img)
+{
+    const targetWidth = parseInt(getValue("bitmapWidth"));
+    const targetHeight = parseInt(getValue("bitmapHeight"));
+
+    const offscreen = new OffscreenCanvas(targetWidth,targetHeight);
+    const ctx = offscreen.getContext("2d");
+    
+    const bitmap = await createImageBitmap(imageBlob, 
+    {
+        resizeWidth:targetWidth,
+        resizeHeight:targetHeight,
+    });
+
+    ctx.drawImage(bitmap,0,0,targetWidth,targetHeight);
+    const imageData = ctx.getImageData(0,0,targetWidth,targetHeight);
+    bitmapData = rgbaToRgb(imageData);
+
+    drawRGBBitmap(getBitmapInputData(bitmapData));//drawing image preview
+}
+
+/**
+ * 
+ * @param {number[]} bitmapData 
+ * @returns {File} image data
+ */
+function bitmapToFile(bitmapData)
+{
+    const rgb565Bitmap = getRGBBitmap(bitmapData);
+    const outputImageBlob = new Blob([rgb565Bitmap]);
+    const outputImage = new File([outputImageBlob], "output.bmp",{type:'image/bmp'});
+    return outputImage;
 }
 
 function rgbaToRgb(imageData)
@@ -298,7 +306,6 @@ function rgbaToRgb(imageData)
       
       j += 3
     }
-    //console.log(bitmapData);
     return bitmapData;
 }
 
@@ -376,13 +383,13 @@ async function sendBitmapToScreen()
 
     if(data == undefined)
     {
-        imageID = await createFile("img", outputImage);
+        imageID = await createFile("img", bitmapToFile(bitmapData));
         await storage.set("imageID",imageID);       
     }
     else
     {
         imageID = data;
-        await updateFile(imageID, outputImage);
+        await updateFile(imageID, bitmapToFile(bitmapData));
     }
 
     const bitmapUrl = `https://wappsto.com/services/2.1/file/${imageID}?X-session=${sessionID}`;
@@ -434,8 +441,8 @@ function setup()
     let canvas = createCanvas(screenWidth * boxSize, screenHeight * boxSize);
     canvas.parent('canvas-holder');
 
-    cols = Math.floor(screenWidth);
-    rows = Math.floor(screenHeight);
+    const cols = Math.floor(screenWidth);
+    const rows = Math.floor(screenHeight);
     console.log("sWidth",screenWidth,"sHeigth",screenHeight,"cols:", cols,"rows:",rows);
     grid = new Array(cols);
   
@@ -609,6 +616,23 @@ function drawRGBBitmap({x=0,y=0,bitmap,w=0,h=0})
 {
     fillRect(x,y,w,h,51);
 
+    for(let j = 0; j < h; j++, y++)
+    {
+        for(let i = 0; i < w; i++)
+        {
+            const index = (j * w + i) * 3;
+
+            const r = bitmap[index];
+            const g = bitmap[index + 1];
+            const b = bitmap[index + 2];
+
+            drawPixel(x + i, y, color(r, g, b));
+        }
+    }
+}
+
+function drawRGB565Bitmap({x=0,y=0,bitmap,w=0,h=0})
+{
     for(let j = 0; j < h; j++, y++)
     {
         for(let i = 0; i < w; i++)
