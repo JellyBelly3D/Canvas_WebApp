@@ -144,6 +144,9 @@ let displayRgbBitmapValue;
 //let displayMonoBitmapValue;
 let displayBrightnessValue;
 
+let bitmapInputSettings;
+let previousBitmapInputSettings;
+
 const getTextInputData =() =>
 ({
     x: parseInt(getValue("textXPos")),
@@ -156,17 +159,24 @@ const getTextInputData =() =>
     text: getValue("textInput")
 });
 
+function getBitmapInputSettings() 
+{
+    return {
+        x: parseInt(getValue("bitmapXPos")),
+        y: parseInt(getValue("bitmapYPos")),
+        w: parseInt(getValue("bitmapWidth")),
+        h: parseInt(getValue("bitmapHeight")),
+        color: "0xffff",
+        bColor: "0",
+    }
+}
+
 const getBitmapInputData = (bitmap) =>
 ({
-    x: parseInt(getValue("bitmapXPos")),
-    y: parseInt(getValue("bitmapYPos")),
-    w: parseInt(getValue("bitmapWidth")),
-    h: parseInt(getValue("bitmapHeight")),
-    color: "0xffff",
-    bColor: "0",
+    ...bitmapInputSettings,
     bitmap,
-    //url:bitmap,
 });
+
 // eslint-disable-next-line no-unused-vars
 async function getValues()
 {
@@ -206,8 +216,16 @@ allFormElements.forEach((e) =>
     });
 });
 
+window.addEventListener('load', () => 
+{
+    bitmapInputSettings = getBitmapInputSettings();
+})
+
 bitmapPanelForm.addEventListener('change', () =>
 {
+    previousBitmapInputSettings = bitmapInputSettings; //saving previous settings
+    bitmapInputSettings = getBitmapInputSettings();
+
     if(bitmapData) //convert preview image only if image has already been loaded
     {
         convertImage();
@@ -240,8 +258,10 @@ fileSelector.addEventListener('change', () =>
 
 function convertImage()
 {
-    const targetWidth = parseInt(getValue("bitmapWidth"));
-    const targetHeight = parseInt(getValue("bitmapHeight"));
+    const bitmapSettings = bitmapInputSettings;
+
+    const targetWidth = bitmapSettings.w;
+    const targetHeight = bitmapSettings.h;
 
     const offscreen = new OffscreenCanvas(targetWidth,targetHeight);
     const ctx = offscreen.getContext("2d");
@@ -256,7 +276,7 @@ function convertImage()
         ctx.drawImage(resizedImageBitmap,0,0,targetWidth,targetHeight);
         const imageData = ctx.getImageData(0,0,targetWidth,targetHeight);
         bitmapData = rgbaToRgb(imageData);
-    
+        
         drawRGBBitmap(getBitmapInputData(bitmapData));//drawing image preview
 
         //converted = false;
@@ -277,7 +297,7 @@ function convertImage()
  * @param {number[]} bitmapData 
  * @returns {File} image file
  */
-function bitmapToFile(bitmapData)
+function bitmapToFile()
 {
     const rgb565Bitmap = getRGBBitmap(bitmapData);
     const outputImageBlob = new Blob([rgb565Bitmap]);
@@ -287,7 +307,7 @@ function bitmapToFile(bitmapData)
 
 function rgbaToRgb(imageData)
 {
-    const bitmapData = new Uint8ClampedArray(Math.ceil(imageData.data.length / 4) * 3);
+    const bitmapDataRgb = new Uint8ClampedArray(Math.ceil(imageData.data.length / 4) * 3);
     let j = 0;
     for(let i = 0; i < imageData.data.length; i += 4) 
     {
@@ -297,24 +317,24 @@ function rgbaToRgb(imageData)
 
       const alpha = imageData.data[i + 3] / 255;
       //black background
-      bitmapData[j]     = Math.round((1 - alpha) * 0) + (alpha * r);
-      bitmapData[j + 1] = Math.round((1 - alpha) * 0) + (alpha * g);
-      bitmapData[j + 2] = Math.round((1 - alpha) * 0) + (alpha * b);
+      bitmapDataRgb[j]     = Math.round((1 - alpha) * 0) + (alpha * r);
+      bitmapDataRgb[j + 1] = Math.round((1 - alpha) * 0) + (alpha * g);
+      bitmapDataRgb[j + 2] = Math.round((1 - alpha) * 0) + (alpha * b);
       
       j += 3
     }
-    return bitmapData;
+    return bitmapDataRgb;
 }
 
-function getRGBBitmap(bitmapData)
+function getRGBBitmap(bitmapDataRgb)
 {
-    const rgb565Bitmap = new Uint16Array(Math.ceil(bitmapData.length/3));
+    const rgb565Bitmap = new Uint16Array(Math.ceil(bitmapDataRgb.length/3));
     let j = 0;
     for(let i = 0; i < bitmapData.length; i += 3) 
     {
-      const r = bitmapData[i];
-      const g = bitmapData[i + 1];
-      const b = bitmapData[i + 2];
+      const r = bitmapDataRgb[i];
+      const g = bitmapDataRgb[i + 1];
+      const b = bitmapDataRgb[i + 2];
   
       const color24 = "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
       const rgb565 = convert24to16(color24);
@@ -380,13 +400,13 @@ async function sendBitmapToScreen()
 
     if(data == undefined)
     {
-        imageID = await createFileOnWebApp("img", bitmapToFile(bitmapData));
+        imageID = await createFileOnWebApp("img", bitmapToFile());
         await storage.set("imageID",imageID);       
     }
     else
     {
         imageID = data;
-        await updateFileOnWebApp(imageID, bitmapToFile(bitmapData));
+        await updateFileOnWebApp(imageID, bitmapToFile());
     }
 
     const bitmapUrl = `https://wappsto.com/services/2.1/file/${imageID}?X-session=${sessionID}`;
@@ -437,7 +457,7 @@ function setup()
 {
     let canvas = createCanvas(screenWidth * boxSize, screenHeight * boxSize);
     canvas.parent('canvas-holder');
-
+    background(51);
     const cols = Math.floor(screenWidth);
     const rows = Math.floor(screenHeight);
     console.log("sWidth",screenWidth,"sHeigth",screenHeight,"cols:", cols,"rows:",rows);
@@ -471,7 +491,7 @@ class Pixel
     {
         this.show = function () 
         {
-            fill(c);
+            fill(c); //add ',0' for full transperency
             stroke(40); //pixel border color
             rect(x * boxSize, y * boxSize, boxSize, boxSize);
         };
@@ -480,8 +500,11 @@ class Pixel
 
 function drawPixel(x,y,c)
 {
-    grid[y][x] = new Pixel(x, y, c);
-    grid[y][x].show();
+    if(x >= 0 && x <= 64 && y >= 0 && y < 64)
+    {
+        grid[y][x] = new Pixel(x, y, c);
+        grid[y][x].show(); 
+    }
 }
 
 function fillRect(x,y,w,h,c)
@@ -611,7 +634,16 @@ function drawXBitmap({x=0,y=0,bitmap,w=64,h=64,c=255})
 
 function drawRGBBitmap({x=0,y=0,bitmap,w=0,h=0})
 {
-    fillRect(x,y,w,h,51);
+    if(previousBitmapInputSettings)
+    {       
+        fillRect(
+            previousBitmapInputSettings.x,
+            previousBitmapInputSettings.y,
+            previousBitmapInputSettings.w,
+            previousBitmapInputSettings.h,
+            51
+        );
+    }
 
     for(let j = 0; j < h; j++, y++)
     {
