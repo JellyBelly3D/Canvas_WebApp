@@ -134,12 +134,11 @@ const classicAdafruitFont = [
 
 let grid;
 let storage;
-let imageBlob;
-//let converted;
-let bitmapData;
+let imageData;
 let displayDevice;
 let displayNetwork;
 let displayTextValue;
+let screenSizeImageBlob; //latest creation
 let displayRgbBitmapValue;
 //let displayMonoBitmapValue;
 let displayBrightnessValue;
@@ -226,9 +225,9 @@ bitmapPanelForm.addEventListener('change', () =>
     previousBitmapInputSettings = bitmapInputSettings; //saving previous settings
     bitmapInputSettings = getBitmapInputSettings();
 
-    if(bitmapData) //convert preview image only if image has already been loaded
+    if(screenSizeImageBlob) //convert preview image only if image has already been loaded
     {
-        convertImage();
+        convertImage(screenSizeImageBlob);
     }
 });
 // Draw text upon changes in text area elements
@@ -251,35 +250,55 @@ fileSelector.addEventListener('change', () =>
     fileReader.onload = function(e)
     {
         const imgBuffer = e.target.result;
-        imageBlob = new Blob([imgBuffer]);
-        convertImage();
+        const imageBlob = new Blob([imgBuffer]);
+        convertImage(imageBlob,true);
     }
 });
 
-function convertImage()
+function convertImage(imageBlob,toScreenSize=false)
 {
     const bitmapSettings = bitmapInputSettings;
 
     const targetWidth = bitmapSettings.w;
     const targetHeight = bitmapSettings.h;
 
-    const offscreen = new OffscreenCanvas(targetWidth,targetHeight);
+    const offscreen = new OffscreenCanvas(screenWidth,screenHeight);
     const ctx = offscreen.getContext("2d");
+
+    if(toScreenSize)
+    {
+        createImageBitmap(imageBlob, 
+        {
+            resizeWidth:screenWidth,
+            resizeHeight:screenHeight,
+        })
+        .then(screenSizeBitmap =>
+        {
+            ctx.drawImage(screenSizeBitmap,0,0,screenWidth,screenWidth);
+
+            offscreen.convertToBlob(
+            {
+                type:'image/bmp',
+                quality:1
+            })
+            .then(blob => 
+            {
+                screenSizeImageBlob = blob;
+                console.log("Resized blob to screen Width:",screenWidth,"Height:",screenHeight);
+            });
+        })
+    }
     
     createImageBitmap(imageBlob, 
     {
         resizeWidth:targetWidth,
         resizeHeight:targetHeight,
     })
-    .then(resizedImageBitmap =>
+    .then(targetSizeBitmap =>
     {
-        ctx.drawImage(resizedImageBitmap,0,0,targetWidth,targetHeight);
-        const imageData = ctx.getImageData(0,0,targetWidth,targetHeight);
-        bitmapData = rgbaToRgb(imageData);
-        
-        drawRGBBitmap(getBitmapInputData(bitmapData));//drawing image preview
-
-        //converted = false;
+        ctx.drawImage(targetSizeBitmap,0,0,targetWidth,targetHeight);
+        imageData = ctx.getImageData(0,0,targetWidth,targetHeight);
+        drawRGBBitmap(getBitmapInputData(imageData.data));//drawing image preview
     })
     .catch(async () =>
     {
@@ -287,19 +306,13 @@ function convertImage()
         const imgBuffer = await imageBlob.arrayBuffer();
         const bitmap565 = new Int16Array(imgBuffer);
         drawRGB565Bitmap(getBitmapInputData(bitmap565));
-
-        //converted = true;
     });
 }
 
-/**
- * 
- * @param {number[]} bitmapData 
- * @returns {File} image file
- */
 function bitmapToFile()
 {
-    const rgb565Bitmap = getRGBBitmap(bitmapData);
+    const bitmapDataRgb = rgbaToRgb(imageData); 
+    const rgb565Bitmap = getRGBBitmap(bitmapDataRgb);
     const outputImageBlob = new Blob([rgb565Bitmap]);
     const outputImage = new File([outputImageBlob], "output.bmp",{type:'image/bmp'});
     return outputImage;
@@ -330,7 +343,7 @@ function getRGBBitmap(bitmapDataRgb)
 {
     const rgb565Bitmap = new Uint16Array(Math.ceil(bitmapDataRgb.length/3));
     let j = 0;
-    for(let i = 0; i < bitmapData.length; i += 3) 
+    for(let i = 0; i < bitmapDataRgb.length; i += 3) 
     {
       const r = bitmapDataRgb[i];
       const g = bitmapDataRgb[i + 1];
@@ -650,13 +663,14 @@ function drawRGBBitmap({x=0,y=0,bitmap,w=0,h=0})
     {
         for(let i = 0; i < w; i++)
         {
-            const index = (j * w + i) * 3;
+            const index = (j * w + i) * 4;
 
             const r = bitmap[index];
             const g = bitmap[index + 1];
             const b = bitmap[index + 2];
+            const a = bitmap[index + 3];
 
-            drawPixel(x + i, y, color(r, g, b));
+            drawPixel(x + i, y, color(r, g, b, a));
         }
     }
 }
