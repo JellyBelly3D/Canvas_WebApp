@@ -143,6 +143,8 @@ let displayRgbBitmapValue;
 //let displayMonoBitmapValue;
 let displayBrightnessValue;
 
+let imageDataBuffer = new Uint8ClampedArray(screenHeight*screenWidth*4);
+
 let bitmapInputSettings;
 let previousBitmapInputSettings;
 
@@ -307,6 +309,13 @@ function convertImage(imageBlob,toScreenSize=false)
         const bitmap565 = new Int16Array(imgBuffer);
         drawRGB565Bitmap(getBitmapInputData(bitmap565));
     });
+}
+
+function screenBuffer()
+{
+    console.log("To Screen Buffer",imageData);
+    imageDataBuffer.set(imageData.data);
+    drawRGBBitmap(getBitmapInputData(imageDataBuffer));
 }
 
 function bitmapToFile()
