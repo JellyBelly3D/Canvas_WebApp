@@ -457,6 +457,7 @@ function setup()
 {
     let canvas = createCanvas(screenWidth * boxSize, screenHeight * boxSize);
     canvas.parent('canvas-holder');
+    canvas.style.display = 'block';
     background(51);
     const cols = Math.floor(screenWidth);
     const rows = Math.floor(screenHeight);
