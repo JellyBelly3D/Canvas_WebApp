@@ -310,7 +310,7 @@ function convertImage(imageBlob,toScreenSize=false)
         drawRGB565Bitmap(getBitmapInputData(bitmap565));
     });
 }
-
+// eslint-disable-next-line no-unused-vars
 function toScreenBuffer()
 {
     const {x,y,w,h} = getBitmapInputSettings();
@@ -318,17 +318,28 @@ function toScreenBuffer()
     const imageBuffer = new Uint8ClampedArray(w * h * 4);
     imageBuffer.set(imageData.data);
 
-    //console.log("Input buffer length",imageBuffer.length,"x",x,"y",y,"width",w,"height",h,"\nStart index:",startIndex);
+    console.log("Input buffer length",imageBuffer.length,"x",x,"y",y,"width",w,"height",h);
+
+    // for(let i = 0; i < h; i++)
+    // {
+    //     const rowStartIndex = i * w * 4;
+    //     const rowEndIndex = rowStartIndex + Math.min(w, screenWidth - x) * 4;
+    //     const offset = ((y + i) * screenWidth + x) * 4;
+
+    //     console.log("Row start:",rowStartIndex,"Row end:",rowEndIndex,"Offset:",offset);
+
+    //     screenBuffer.set(imageBuffer.subarray(rowStartIndex, rowEndIndex), offset);
+    // }
 
     for(let i = 0; i < h; i++)
     {
-        const rowStartIndex = i * w * 4;
-        const rowEndIndex = rowStartIndex + Math.min(w, screenWidth - x) * 4;
-        const offset = ((y + i) * screenWidth + x) * 4;
+        for(let j = 0; j < w; j++)
+        {
+            const index = (i * w + j) * 4;
+            const screenBufferIndex = ((y + i) * screenWidth + x + j) * 4;
 
-        console.log("Row start:",rowStartIndex,"Row end:",rowEndIndex,"Offset:",offset);
-
-        screenBuffer.set(imageBuffer.subarray(rowStartIndex, rowEndIndex), offset);
+            screenBuffer.set(imageBuffer.subarray(index, index + 4), screenBufferIndex);
+        }
     }
 
     drawRGBBitmap({bitmap:screenBuffer,w:64,h:64});
