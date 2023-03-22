@@ -143,7 +143,7 @@ let displayRgbBitmapValue;
 //let displayMonoBitmapValue;
 let displayBrightnessValue;
 
-let imageDataBuffer = new Uint8ClampedArray(screenHeight*screenWidth*4);
+let screenBuffer = new Uint8ClampedArray(screenHeight*screenWidth*4);
 
 let bitmapInputSettings;
 let previousBitmapInputSettings;
@@ -298,7 +298,7 @@ function convertImage(imageBlob,toScreenSize=false)
     })
     .then(targetSizeBitmap =>
     {
-        ctx.drawImage(targetSizeBitmap,0,0,targetWidth,targetHeight);
+        ctx.drawImage(targetSizeBitmap,0,0); //,targetWidth,targetHeight
         imageData = ctx.getImageData(0,0,targetWidth,targetHeight);
         drawRGBBitmap(getBitmapInputData(imageData.data));//drawing image preview
     })
@@ -311,11 +311,27 @@ function convertImage(imageBlob,toScreenSize=false)
     });
 }
 
-function screenBuffer()
+function toScreenBuffer()
 {
-    console.log("To Screen Buffer",imageData);
-    imageDataBuffer.set(imageData.data);
-    drawRGBBitmap(getBitmapInputData(imageDataBuffer));
+    const {x,y,w,h} = getBitmapInputSettings();
+
+    const imageBuffer = new Uint8ClampedArray(w * h * 4);
+    imageBuffer.set(imageData.data);
+
+    //console.log("Input buffer length",imageBuffer.length,"x",x,"y",y,"width",w,"height",h,"\nStart index:",startIndex);
+
+    for(let i = 0; i < h; i++)
+    {
+        const rowStartIndex = i * w * 4;
+        const rowEndIndex = rowStartIndex + Math.min(w, screenWidth - x) * 4;
+        const offset = ((y + i) * screenWidth + x) * 4;
+
+        console.log("Row start:",rowStartIndex,"Row end:",rowEndIndex,"Offset:",offset);
+
+        screenBuffer.set(imageBuffer.subarray(rowStartIndex, rowEndIndex), offset);
+    }
+
+    drawRGBBitmap({bitmap:screenBuffer,w:64,h:64});
 }
 
 function bitmapToFile()
