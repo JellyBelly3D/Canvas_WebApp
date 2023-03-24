@@ -157,7 +157,8 @@ const getTextInputData =() =>
     tColor: getValue("textColor"),
     bColor: getValue("backgroundColor"),
     tSize: parseInt(getValue("tSize")),
-    text: getValue("textInput")
+    text: getValue("textInput"),
+    drawBG: document.getElementById("backgroundColorCheckbox").checked,
 });
 
 function getBitmapInputSettings() 
@@ -317,7 +318,7 @@ function toScreenBuffer()
 
     const imageBuffer = new Uint8ClampedArray(w * h * 4);
     imageBuffer.set(imageData.data);
-
+    
     console.log("Input buffer length",imageBuffer.length,"x",x,"y",y,"width",w,"height",h);
 
     // for(let i = 0; i < h; i++)
@@ -347,7 +348,7 @@ function toScreenBuffer()
 
 function bitmapToFile()
 {
-    const bitmapDataRgb = rgbaToRgb(imageData); 
+    const bitmapDataRgb = rgbaToRgb(imageData);//screenBuffer
     const rgb565Bitmap = getRGBBitmap(bitmapDataRgb);
     const outputImageBlob = new Blob([rgb565Bitmap]);
     const outputImage = new File([outputImageBlob], "output.bmp",{type:'image/bmp'});
@@ -424,19 +425,11 @@ function convert16to24(color16)
 // eslint-disable-next-line no-unused-vars
 function sendTextToScreen(object)
 {
-  //fix this, bad object creation, can be shorter
   let config = {
-    x:object.x,
-    y:object.y,
-    text:object.text,
-    w:object.w,
-    h:object.h,
+    ...object,
     tColor:convert24to16(object.tColor),
     bColor:convert24to16(object.bColor),
-    tSize:object.tSize
   };
-
-  console.log("sendToScreen()", config);
 
   displayTextValue[0].control(JSON.stringify(config));
 }
@@ -583,7 +576,8 @@ function clearScreen()
         tColor: "0",
         bColor: "0",
         tSize: 1,
-        text: ""
+        text: "",
+        drawBG: true,
     }
 
     displayTextValue[0].control(JSON.stringify(scrnClr));

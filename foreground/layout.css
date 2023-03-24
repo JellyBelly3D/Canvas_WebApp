@@ -1,9 +1,14 @@
+.container, .container-fluid
+{
+  padding-top: 0%;
+  padding-bottom: 0%;
+}
 main {
-  padding: 10px;
   display: flex;
   justify-content: center; 
+  align-content: center;
   /* justify-content: space-evenly; */
-  background-color: #27a7f6a4;
+  background-color: #429ad1a4;
 }
 
 html, body {
@@ -24,7 +29,7 @@ html, body {
 }
 
 #canvas-area {
-  padding: 2px;
+  padding: 10px;
   margin: 10px;
   background-color: #dee5ecf3;
 }
