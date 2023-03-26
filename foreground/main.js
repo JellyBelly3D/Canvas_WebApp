@@ -10,8 +10,8 @@ const screenHeight = 64;
 const fileSelector = document.getElementById('file');
 const allFormElements = document.querySelectorAll('form');
 const allInputElements = document.querySelectorAll('input');
-const textPanelForm = document.getElementById('textPanelForm');
 const brightnessSlider = document.getElementById('brightness');
+const textPanelForm = document.getElementById('textPanelForm');
 const bitmapPanelForm = document.getElementById('bitmapPanelForm');
 
 const getValue = (id) => document.getElementById(id).value;
@@ -138,12 +138,12 @@ let imageData;
 let displayDevice;
 let displayNetwork;
 let displayTextValue;
-let screenSizeImageBlob; //latest creation
+let screenSizeImageBlob;
 let displayRgbBitmapValue;
 //let displayMonoBitmapValue;
 let displayBrightnessValue;
 
-let screenBuffer = new Uint8ClampedArray(screenHeight*screenWidth*4);
+let screenBuffer = new Uint8ClampedArray(screenHeight * screenWidth * 4);
 
 let bitmapInputSettings;
 let previousBitmapInputSettings;
@@ -252,15 +252,15 @@ fileSelector.addEventListener('change', () =>
     fileReader.readAsArrayBuffer(file);
     fileReader.onload = function(e)
     {
-        const imgBuffer = e.target.result;
-        const imageBlob = new Blob([imgBuffer]);
-        convertImage(imageBlob,true);
+        const inputImageArrayBuffer = e.target.result;
+        const inputImageBlob = new Blob([inputImageArrayBuffer]);
+        convertImage(inputImageBlob,true);
     }
 });
 
-function convertImage(imageBlob,toScreenSize=false)
+function convertImage(inputImageBlob,toScreenSize=false)
 {
-    const bitmapSettings = bitmapInputSettings;
+    const bitmapSettings = getBitmapInputSettings();
 
     const targetWidth = bitmapSettings.w;
     const targetHeight = bitmapSettings.h;
@@ -270,7 +270,7 @@ function convertImage(imageBlob,toScreenSize=false)
 
     if(toScreenSize)
     {
-        createImageBitmap(imageBlob, 
+        createImageBitmap(inputImageBlob, 
         {
             resizeWidth:screenWidth,
             resizeHeight:screenHeight,
@@ -292,7 +292,7 @@ function convertImage(imageBlob,toScreenSize=false)
         })
     }
     
-    createImageBitmap(imageBlob, 
+    createImageBitmap(inputImageBlob, 
     {
         resizeWidth:targetWidth,
         resizeHeight:targetHeight,
@@ -306,7 +306,7 @@ function convertImage(imageBlob,toScreenSize=false)
     .catch(async () =>
     {
         //console.log("Previously converted image input");
-        const imgBuffer = await imageBlob.arrayBuffer();
+        const imgBuffer = await inputImageBlob.arrayBuffer();
         const bitmap565 = new Int16Array(imgBuffer);
         drawRGB565Bitmap(getBitmapInputData(bitmap565));
     });
@@ -320,17 +320,6 @@ function toScreenBuffer()
     imageBuffer.set(imageData.data);
     
     console.log("Input buffer length",imageBuffer.length,"x",x,"y",y,"width",w,"height",h);
-
-    // for(let i = 0; i < h; i++)
-    // {
-    //     const rowStartIndex = i * w * 4;
-    //     const rowEndIndex = rowStartIndex + Math.min(w, screenWidth - x) * 4;
-    //     const offset = ((y + i) * screenWidth + x) * 4;
-
-    //     console.log("Row start:",rowStartIndex,"Row end:",rowEndIndex,"Offset:",offset);
-
-    //     screenBuffer.set(imageBuffer.subarray(rowStartIndex, rowEndIndex), offset);
-    // }
 
     for(let i = 0; i < h; i++)
     {
@@ -370,7 +359,7 @@ function rgbaToRgb(imageData)
       bitmapDataRgb[j]     = Math.round((1 - alpha) * 0) + (alpha * r);
       bitmapDataRgb[j + 1] = Math.round((1 - alpha) * 0) + (alpha * g);
       bitmapDataRgb[j + 2] = Math.round((1 - alpha) * 0) + (alpha * b);
-      
+
       j += 3
     }
     return bitmapDataRgb;
@@ -378,7 +367,7 @@ function rgbaToRgb(imageData)
 
 function getRGBBitmap(bitmapDataRgb)
 {
-    const rgb565Bitmap = new Uint16Array(Math.ceil(bitmapDataRgb.length/3));
+    const rgb565Bitmap = new Uint16Array(Math.ceil(bitmapDataRgb.length / 3));
     let j = 0;
     for(let i = 0; i < bitmapDataRgb.length; i += 3) 
     {
@@ -500,10 +489,9 @@ function setup()
     let canvas = createCanvas(screenWidth * boxSize, screenHeight * boxSize);
     canvas.parent('canvas-holder');
     canvas.style.display = 'block';
-    background(51);
+
     const cols = Math.floor(screenWidth);
     const rows = Math.floor(screenHeight);
-    console.log("sWidth",screenWidth,"sHeigth",screenHeight,"cols:", cols,"rows:",rows);
     grid = new Array(cols);
   
     for (let i = 0; i < cols; i++)
@@ -515,15 +503,7 @@ function setup()
     {
       for (let x = 0; x < rows; x++) 
       {
-        grid[y][x] = new Pixel(x, y, 51);
-      }
-    }
-    
-    for (let y = 0; y < cols; y++) 
-    {
-      for (let x = 0; x < rows; x++) 
-      {
-         grid[y][x].show();
+        drawPixel(x,y,0);
       }
     }
 }
@@ -543,7 +523,7 @@ class Pixel
 
 function drawPixel(x,y,c)
 {
-    if(x >= 0 && x <= 64 && y >= 0 && y < 64)
+    if(x >= 0 && x <= screenWidth && y >= 0 && y < screenHeight)
     {
         grid[y][x] = new Pixel(x, y, c);
         grid[y][x].show(); 
@@ -610,10 +590,11 @@ function drawChar(char, x, y, tSize, c)
     }
 }
 
-function drawText({x=0,y=0,text="",w=64,h=64,tColor=255,bColor=51,tSize=1})
+function drawText({x=0,y=0,text="",w=64,h=64,tColor=255,bColor=0,tSize=1})
 {
     fillRect(x,y,w,h,bColor); //filling the text area with background color
-    
+    //previousTextInputLocation = { x, y, w, h };
+
     let charArray = text.split('');
     let lineCharLimit = Math.floor((w / (charWidth + 1)) / tSize); //maximum number of characters on the line
     let startXPos = x;
@@ -653,7 +634,7 @@ function drawText({x=0,y=0,text="",w=64,h=64,tColor=255,bColor=51,tSize=1})
 function drawXBitmap({x=0,y=0,bitmap,w=64,h=64,c=255})
 {
     const byteWidth = Math.floor((w + 7) / 8);
-    b = new Uint8ClampedArray(bitmap.length);
+    let b = new Uint8ClampedArray(bitmap.length);
     
     for(let j = 0; j < h; j++, y++)
     {
@@ -679,16 +660,17 @@ function drawXBitmap({x=0,y=0,bitmap,w=64,h=64,c=255})
 function drawRGBBitmap({x=0,y=0,bitmap,w=0,h=0})
 {
     if(previousBitmapInputSettings)
-    {       
+    {
         fillRect(
             previousBitmapInputSettings.x,
             previousBitmapInputSettings.y,
             previousBitmapInputSettings.w,
             previousBitmapInputSettings.h,
-            51
+            51,
         );
     }
 
+    //previousBitmapInputSettings = { x, y, w, h };
     for(let j = 0; j < h; j++, y++)
     {
         for(let i = 0; i < w; i++)
