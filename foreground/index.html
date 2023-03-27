@@ -61,7 +61,7 @@
     <div id="canvas-area">
       <div class="grid">
         <button onclick="fillScreen()">Clear Preview</button>
-        <button onclick="toScreenBuffer()">To Screen Buffer</button>
+        <button id="toScreenBufferButton">To Main Layer</button>
         <button onclick="clearScreen()">Clear Matrix</button>
       </div>
       <div id="canvas-holder"></div>
@@ -107,7 +107,7 @@
       </form>
       <input id="file" type="file" accept=".bmp,.jpg,.png,.webp,.xbm,.avif,.ico" name="file">
         <button aria-busy="false" id="sendBitmapBtn" onclick="sendBitmapToScreen()">
-        Send to Screen
+        Send Main Layer to Screen
         </button>
     </div>
   </main>

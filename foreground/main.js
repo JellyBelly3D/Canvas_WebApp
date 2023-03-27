@@ -13,6 +13,7 @@ const allInputElements = document.querySelectorAll('input');
 const brightnessSlider = document.getElementById('brightness');
 const textPanelForm = document.getElementById('textPanelForm');
 const bitmapPanelForm = document.getElementById('bitmapPanelForm');
+const toScreenBufferButton = document.getElementById('toScreenBufferButton');
 
 const getValue = (id) => document.getElementById(id).value;
 
@@ -134,19 +135,14 @@ const classicAdafruitFont = [
 
 let grid;
 let storage;
-let imageData;
 let displayDevice;
 let displayNetwork;
 let displayTextValue;
 let screenSizeImageBlob;
 let displayRgbBitmapValue;
-//let displayMonoBitmapValue;
 let displayBrightnessValue;
-
+//let displayMonoBitmapValue; //unused xbitmap value
 let screenBuffer = new Uint8ClampedArray(screenHeight * screenWidth * 4);
-
-let bitmapInputSettings;
-let previousBitmapInputSettings;
 
 const getTextInputData =() =>
 ({
@@ -175,7 +171,7 @@ function getBitmapInputSettings()
 
 const getBitmapInputData = (bitmap) =>
 ({
-    ...bitmapInputSettings,
+    ...getBitmapInputSettings(),
     bitmap,
 });
 
@@ -184,10 +180,10 @@ async function getValues()
 {
     displayNetwork = await Wappsto.Network.findByName("Display 64x64");
     displayDevice = displayNetwork[0].findDeviceByName("Display");
-    //displayMonoBitmapValue = displayDevice[0].findValueByName("Mono Bitmap");
-    displayRgbBitmapValue = displayDevice[0].findValueByName("RGB565 Bitmap");
-    displayBrightnessValue = displayDevice[0].findValueByName("Brightness");
     displayTextValue = displayDevice[0].findValueByName("Text input");
+    displayBrightnessValue = displayDevice[0].findValueByName("Brightness");
+    displayRgbBitmapValue = displayDevice[0].findValueByName("RGB565 Bitmap");
+    //displayMonoBitmapValue = displayDevice[0].findValueByName("Mono Bitmap");
 
     storage = await Wappsto.wappStorage();
 
@@ -218,25 +214,33 @@ allFormElements.forEach((e) =>
     });
 });
 
-window.addEventListener('load', () => 
+toScreenBufferButton.addEventListener('click', async () =>
 {
-    bitmapInputSettings = getBitmapInputSettings();
+    const imageData = await resizeImage(screenSizeImageBlob);
+    toScreenBuffer(imageData);
+    drawRGBBitmap({x:0,y:0,bitmap:screenBuffer,w:64,h:64});
 })
 
-bitmapPanelForm.addEventListener('change', () =>
+bitmapPanelForm.addEventListener('change', async () =>
 {
-    previousBitmapInputSettings = bitmapInputSettings; //saving previous settings
-    bitmapInputSettings = getBitmapInputSettings();
-
     if(screenSizeImageBlob) //convert preview image only if image has already been loaded
     {
-        convertImage(screenSizeImageBlob);
+        const imageData = await resizeImage(screenSizeImageBlob);
+        drawRGBBitmap({x:0,y:0,bitmap:screenBuffer,w:64,h:64});
+        drawRGBBitmap(getBitmapInputData(imageData.data));
     }
 });
-// Draw text upon changes in text area elements
-textPanelForm.addEventListener('input', () => 
+// Draw text on change in text area elements
+textPanelForm.addEventListener('input', async () => 
 {
+    if(screenSizeImageBlob) //convert preview image only if image has already been loaded
+    {
+        const imageData = await resizeImage(screenSizeImageBlob);
+        drawRGBBitmap({x:0,y:0,bitmap:screenBuffer,w:64,h:64});
+        drawRGBBitmap(getBitmapInputData(imageData.data));
+    }
     drawText(getTextInputData());
+    //TO DO: clear last text area
 });
 
 brightnessSlider.addEventListener('change', () =>
@@ -244,21 +248,23 @@ brightnessSlider.addEventListener('change', () =>
     brightnessControl();
 });
 
-fileSelector.addEventListener('change', () =>
+fileSelector.addEventListener('change', async () =>
 {
     const file = fileSelector.files[0];
     const fileReader = new FileReader();
 
     fileReader.readAsArrayBuffer(file);
-    fileReader.onload = function(e)
+    fileReader.onload = async function(e)
     {
         const inputImageArrayBuffer = e.target.result;
         const inputImageBlob = new Blob([inputImageArrayBuffer]);
-        convertImage(inputImageBlob,true);
+        screenSizeImageBlob = await resizeImageToScreenBlob(inputImageBlob);
+        const imageData = await resizeImage(screenSizeImageBlob);
+        drawRGBBitmap(getBitmapInputData(imageData.data));
     }
 });
 
-function convertImage(inputImageBlob,toScreenSize=false)
+async function resizeImage(inputImageBlob)
 {
     const bitmapSettings = getBitmapInputSettings();
 
@@ -268,54 +274,43 @@ function convertImage(inputImageBlob,toScreenSize=false)
     const offscreen = new OffscreenCanvas(screenWidth,screenHeight);
     const ctx = offscreen.getContext("2d");
 
-    if(toScreenSize)
+    const targetSizeBitmap = await createImageBitmap(inputImageBlob, 
     {
-        createImageBitmap(inputImageBlob, 
-        {
-            resizeWidth:screenWidth,
-            resizeHeight:screenHeight,
-        })
-        .then(screenSizeBitmap =>
-        {
-            ctx.drawImage(screenSizeBitmap,0,0,screenWidth,screenWidth);
-
-            offscreen.convertToBlob(
-            {
-                type:'image/bmp',
-                quality:1
-            })
-            .then(blob => 
-            {
-                screenSizeImageBlob = blob;
-                console.log("Resized blob to screen Width:",screenWidth,"Height:",screenHeight);
-            });
-        })
-    }
-    
-    createImageBitmap(inputImageBlob, 
-    {
-        resizeWidth:targetWidth,
-        resizeHeight:targetHeight,
-    })
-    .then(targetSizeBitmap =>
-    {
-        ctx.drawImage(targetSizeBitmap,0,0); //,targetWidth,targetHeight
-        imageData = ctx.getImageData(0,0,targetWidth,targetHeight);
-        drawRGBBitmap(getBitmapInputData(imageData.data));//drawing image preview
-    })
-    .catch(async () =>
-    {
-        //console.log("Previously converted image input");
-        const imgBuffer = await inputImageBlob.arrayBuffer();
-        const bitmap565 = new Int16Array(imgBuffer);
-        drawRGB565Bitmap(getBitmapInputData(bitmap565));
+        resizeWidth: targetWidth,
+        resizeHeight: targetHeight,
     });
+
+    ctx.drawImage(targetSizeBitmap, 0, 0);
+    const imageData = ctx.getImageData(0, 0, targetWidth, targetHeight);
+
+    return imageData;
+}
+
+async function resizeImageToScreenBlob(inputImageBlob) 
+{
+    const offscreen = new OffscreenCanvas(screenWidth, screenHeight);
+    const ctx = offscreen.getContext("2d");
+  
+    const screenSizeBitmap = await createImageBitmap(inputImageBlob, 
+    {
+      resizeWidth: screenWidth,
+      resizeHeight: screenHeight,
+    });
+  
+    ctx.drawImage(screenSizeBitmap, 0, 0, screenWidth, screenHeight);
+  
+    const blob = await offscreen.convertToBlob(
+    {
+      type: 'image/bmp',
+      quality: 1
+    });
+  
+    return blob;
 }
 // eslint-disable-next-line no-unused-vars
-function toScreenBuffer()
+function toScreenBuffer(imageData)
 {
     const {x,y,w,h} = getBitmapInputSettings();
-
     const imageBuffer = new Uint8ClampedArray(w * h * 4);
     imageBuffer.set(imageData.data);
     
@@ -331,20 +326,18 @@ function toScreenBuffer()
             screenBuffer.set(imageBuffer.subarray(index, index + 4), screenBufferIndex);
         }
     }
-
-    drawRGBBitmap({bitmap:screenBuffer,w:64,h:64});
 }
 
 function bitmapToFile()
 {
-    const bitmapDataRgb = rgbaToRgb(screenBuffer);//screenBuffer
-    const rgb565Bitmap = getRGBBitmap(bitmapDataRgb);
+    const rgbBitmapData = convertRGBAtoRGB(screenBuffer);
+    const rgb565Bitmap = convertBitmapTo16bit(rgbBitmapData);
     const outputImageBlob = new Blob([rgb565Bitmap]);
     const outputImage = new File([outputImageBlob], "output.bmp",{type:'image/bmp'});
     return outputImage;
 }
 
-function rgbaToRgb(imageData)
+function convertRGBAtoRGB(imageData)
 {
     const bitmapDataRgb = new Uint8ClampedArray(Math.ceil(imageData.length / 4) * 3);
     let j = 0;
@@ -365,7 +358,7 @@ function rgbaToRgb(imageData)
     return bitmapDataRgb;
 }
 
-function getRGBBitmap(bitmapDataRgb)
+function convertBitmapTo16bit(bitmapDataRgb)
 {
     const rgb565Bitmap = new Uint16Array(Math.ceil(bitmapDataRgb.length / 3));
     let j = 0;
@@ -543,7 +536,7 @@ function fillRect(x,y,w,h,c)
 // eslint-disable-next-line no-unused-vars
 function fillScreen()
 {
-    fillRect(0,0,screenWidth,screenHeight,51);
+    fillRect(0,0,screenWidth,screenHeight,0);
 }
 // eslint-disable-next-line no-unused-vars
 function clearScreen()
@@ -590,10 +583,12 @@ function drawChar(char, x, y, tSize, c)
     }
 }
 
-function drawText({x=0,y=0,text="",w=64,h=64,tColor=255,bColor=0,tSize=1})
+function drawText({x=0,y=0,text="",w=0,h=0,tColor=0,bColor=0,tSize=1,drawBG=true})
 {
-    fillRect(x,y,w,h,bColor); //filling the text area with background color
-    //previousTextInputLocation = { x, y, w, h };
+    if(drawBG)
+    {
+        fillRect(x,y,w,h,bColor); //filling the text area with background color
+    }
 
     let charArray = text.split('');
     let lineCharLimit = Math.floor((w / (charWidth + 1)) / tSize); //maximum number of characters on the line
@@ -659,18 +654,8 @@ function drawXBitmap({x=0,y=0,bitmap,w=64,h=64,c=255})
 
 function drawRGBBitmap({x=0,y=0,bitmap,w=0,h=0})
 {
-    if(previousBitmapInputSettings)
-    {
-        fillRect(
-            previousBitmapInputSettings.x,
-            previousBitmapInputSettings.y,
-            previousBitmapInputSettings.w,
-            previousBitmapInputSettings.h,
-            51,
-        );
-    }
+    fillRect(x,y,w,h,0,); //clearing drawing area
 
-    //previousBitmapInputSettings = { x, y, w, h };
     for(let j = 0; j < h; j++, y++)
     {
         for(let i = 0; i < w; i++)
@@ -686,7 +671,7 @@ function drawRGBBitmap({x=0,y=0,bitmap,w=0,h=0})
         }
     }
 }
-
+// eslint-disable-next-line no-unused-vars
 function drawRGB565Bitmap({x=0,y=0,bitmap,w=0,h=0})
 {
     for(let j = 0; j < h; j++, y++)
