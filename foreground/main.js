@@ -337,7 +337,7 @@ function toScreenBuffer()
 
 function bitmapToFile()
 {
-    const bitmapDataRgb = rgbaToRgb(imageData);//screenBuffer
+    const bitmapDataRgb = rgbaToRgb(screenBuffer);//screenBuffer
     const rgb565Bitmap = getRGBBitmap(bitmapDataRgb);
     const outputImageBlob = new Blob([rgb565Bitmap]);
     const outputImage = new File([outputImageBlob], "output.bmp",{type:'image/bmp'});
@@ -346,15 +346,15 @@ function bitmapToFile()
 
 function rgbaToRgb(imageData)
 {
-    const bitmapDataRgb = new Uint8ClampedArray(Math.ceil(imageData.data.length / 4) * 3);
+    const bitmapDataRgb = new Uint8ClampedArray(Math.ceil(imageData.length / 4) * 3);
     let j = 0;
-    for(let i = 0; i < imageData.data.length; i += 4) 
+    for(let i = 0; i < imageData.length; i += 4) 
     {
-      const r = imageData.data[i];
-      const g = imageData.data[i + 1];
-      const b = imageData.data[i + 2];
+      const r = imageData[i];
+      const g = imageData[i + 1];
+      const b = imageData[i + 2];
 
-      const alpha = imageData.data[i + 3] / 255;
+      const alpha = imageData[i + 3] / 255;
       //black background
       bitmapDataRgb[j]     = Math.round((1 - alpha) * 0) + (alpha * r);
       bitmapDataRgb[j + 1] = Math.round((1 - alpha) * 0) + (alpha * g);

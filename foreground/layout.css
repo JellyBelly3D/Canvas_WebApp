@@ -43,4 +43,11 @@ html, body {
 input[type=number] {
   -moz-appearance: textfield;
   appearance: textfield;
+  height: 25px;
 }
+
+button{
+  padding-top: 2px;
+  padding-bottom: 2px;
+}
+
