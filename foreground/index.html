@@ -10,8 +10,6 @@
 </head>
 
 <body onload="getValues()">
-  <!-- <header class="container"></header> -->
-
   <main class="container-fluid" id="midContainer">
     <div id="text-area">
       <form onsubmit="return false" action="" id="textPanelForm" name="textPanelForm">
@@ -91,19 +89,6 @@
             </label>
           </div>
         </label>
-        <label for="bitmapColors">
-          <h6>Mono bitmap colors</h6>
-          <div id="bitmapColors">
-            <label for="bitmapColor">
-              Bitmap color
-              <input type="color" id="bitmapColor" name="monoColor" disabled="">
-            </label>
-            <label for="bitmapBgColor">
-              Bitmap background color
-              <input type="color" id="bitmapBgColor" name="bitmapBgColor" disabled="">
-            </label>
-          </div>
-        </label>
       </form>
       <input id="file" type="file" accept=".bmp,.jpg,.png,.webp,.xbm,.avif,.ico" name="file">
         <button aria-busy="false" id="sendBitmapBtn" onclick="sendBitmapToScreen()">
@@ -111,8 +96,6 @@
         </button>
     </div>
   </main>
-
-  <!-- <footer class="container"></footer> -->
 </body>
 
 <script src="https://cdn.jsdelivr.net/npm/wappsto-wapp@0.17.3/dist/wappsto-wapp.min.js"></script>

@@ -435,7 +435,7 @@ async function sendBitmapToScreen()
 
     const bitmapUrl = `https://wappsto.com/services/2.1/file/${imageID}?X-session=${sessionID}`;
 
-    const jsonObject = JSON.stringify(getBitmapInputData(bitmapUrl));
+    const jsonObject = JSON.stringify({x:0,y:0,w:screenWidth,h:screenHeight,bitmap:bitmapUrl});
 
     displayRgbBitmapValue[0].control(jsonObject);
 }
@@ -536,6 +536,7 @@ function fillRect(x,y,w,h,c)
 // eslint-disable-next-line no-unused-vars
 function fillScreen()
 {
+    screenBuffer.fill(0); //clearing screen buffer
     fillRect(0,0,screenWidth,screenHeight,0);
 }
 // eslint-disable-next-line no-unused-vars
