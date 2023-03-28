@@ -7,7 +7,7 @@ main {
   display: flex;
   justify-content: center; 
   align-items: stretch;
-  background-color: #1a3c5182;
+  background-color: #424242e8;
   max-height: 100%;
 }
 html, body {
@@ -23,13 +23,13 @@ html, body {
   border-radius: 10px;
   padding: 10px;
   margin: 15px;
-  background-color: #dee5ecb7;
+  background-color: #ffffffad;
 }
 #canvas-area {
   border-radius: 10px;
   padding: 5px;
   margin: 5px;
-  background-color: #18232381;
+  background-color: #8b8b8b;
   transform: scale(0.92) translateY(-20px);
 }
 

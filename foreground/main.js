@@ -239,8 +239,13 @@ textPanelForm.addEventListener('input', async () =>
         drawRGBBitmap({x:0,y:0,bitmap:screenBuffer,w:64,h:64});
         drawRGBBitmap(getBitmapInputData(imageData.data));
     }
+    else
+    {
+        //TO DO: clear last text area, properly...
+        const {x,y,w,h} = getTextInputData();
+        fillRect(x-1,y-1,w+2,h+2,0);
+    }
     drawText(getTextInputData());
-    //TO DO: clear last text area
 });
 
 brightnessSlider.addEventListener('change', () =>
