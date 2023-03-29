@@ -219,6 +219,7 @@ toScreenBufferButton.addEventListener('click', async () =>
     const imageData = await resizeImage(screenSizeImageBlob);
     toScreenBuffer(imageData);
     drawRGBBitmap({x:0,y:0,bitmap:screenBuffer,w:64,h:64});
+    drawText(getTextInputData());
 })
 
 bitmapPanelForm.addEventListener('change', async () =>
@@ -228,6 +229,7 @@ bitmapPanelForm.addEventListener('change', async () =>
         const imageData = await resizeImage(screenSizeImageBlob);
         drawRGBBitmap({x:0,y:0,bitmap:screenBuffer,w:64,h:64});
         drawRGBBitmap(getBitmapInputData(imageData.data));
+        drawText(getTextInputData());
     }
 });
 // Draw text on change in text area elements
@@ -266,6 +268,7 @@ fileSelector.addEventListener('change', async () =>
         screenSizeImageBlob = await resizeImageToScreenBlob(inputImageBlob);
         const imageData = await resizeImage(screenSizeImageBlob);
         drawRGBBitmap(getBitmapInputData(imageData.data));
+        drawText(getTextInputData());
     }
 });
 

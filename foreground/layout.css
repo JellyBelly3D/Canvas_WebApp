@@ -15,6 +15,7 @@ html, body {
   height: 100%;
   margin: 0;
   padding: 0;
+  background-color: #424242e8;
 }
 * {
   box-sizing: border-box;
@@ -31,8 +32,8 @@ html, body {
   margin: 5px;
   background-color: #8b8b8b;
   transform: scale(0.92) translateY(-20px);
+  /* To Do: try to scale canvas itself and not the whole div */
 }
-
 input[type=number] {
   -moz-appearance: textfield;
   appearance: textfield;
