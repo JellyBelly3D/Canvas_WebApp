@@ -475,7 +475,16 @@ function sendTextToScreen(object)
 
   displayTextValue[0].control(JSON.stringify(config));
 }
-
+/**
+ * Sends contents of screen buffer as a .bmp image to 
+ * WepApp storage and creates an URL to the image.
+ * 
+ * Sends JSON config to the "displayRgbBitmapValue" with 
+ * bitmap as URL placed at x=0,y=0 and dimensions of the whole screen.
+ * 
+ * Previously uploaded file to the WebApps storage will 
+ * be overwritten.
+ */
 async function sendBitmapToScreen()
 {
     let imageID;
@@ -718,10 +727,14 @@ function drawXBitmap({x=0,y=0,bitmap,w=64,h=64,c=255})
         }
     }
 }
-
+/**
+ * Clears area under the image to remove "trailing" pixels
+ * then draws the image using RGBA values.
+ * @param {object} object with bitmap settings and bitmap data 
+ */
 function drawRGBBitmap({x=0,y=0,bitmap,w=0,h=0})
 {
-    fillRect(x,y,w,h,0,); //clearing drawing area
+    fillRect(x,y,w,h,0,);
 
     for(let j = 0; j < h; j++, y++)
     {
