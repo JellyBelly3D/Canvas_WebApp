@@ -176,7 +176,6 @@ const getBitmapInputData = (bitmap) =>
     bitmap,
 });
 
-// eslint-disable-next-line no-unused-vars
 async function getValues()
 {
     displayNetwork = await Wappsto.Network.findByName("Display 64x64");
@@ -232,7 +231,7 @@ bitmapPanelForm.addEventListener('change', async () =>
 
         drawRGBBitmap({x:0,y:0,bitmap:screenBuffer,w:64,h:64}); // drawing screen buffer first
         drawRGBBitmap(getBitmapInputData(imageData.data));      // then current image preview
-        drawText(getTextInputData());                           // then text :)
+        drawText(getTextInputData());                           // then text
     }
 });
 // Draw text on change in text area elements
@@ -249,7 +248,11 @@ textPanelForm.addEventListener('input', async () =>
     {
         //TO DO: clear last text area, properly...
         const {x,y,w,h} = getTextInputData();
-        fillRect(x-1,y-1,w+2,h+2,0);
+        const x_1 = x < 1 ? x : x -1;
+        const y_1 = y < 1 ? y : y -1;
+        const w2 = w + 2;
+        const h2 = h + 2;
+        fillRect(x_1,y_1,w2,h2,0);
     }
     drawText(getTextInputData());
 });
@@ -276,7 +279,11 @@ fileSelector.addEventListener('change', async () =>
         drawText(getTextInputData());                                        // drawing text
     }
 });
-
+/**
+ * Resizes image Blob to defined dimensions in Image settings
+ * @param {Blob} inputImageBlob 
+ * @returns imageData
+ */
 async function resizeImage(inputImageBlob)
 {
     const bitmapSettings = getBitmapInputSettings();
@@ -298,7 +305,11 @@ async function resizeImage(inputImageBlob)
 
     return imageData;
 }
-
+/**
+ * Resizes image Blob to screen dimensions
+ * @param {Blob} inputImageBlob 
+ * @returns image Blob
+ */
 async function resizeImageToScreenBlob(inputImageBlob) 
 {
     const offscreen = new OffscreenCanvas(screenWidth, screenHeight);
@@ -320,17 +331,19 @@ async function resizeImageToScreenBlob(inputImageBlob)
   
     return blob;
 }
-
+/**
+ * Puts imageData in to screenBuffer.
+ * Crops the imageData if image is getting out of bounds.
+ * @param {ImageData} imageData 
+ */
 function toScreenBuffer(imageData)
 {
     const {x,y,w,h} = getBitmapInputSettings();
     const imageBuffer = new Uint8ClampedArray(w * h * 4);
-    imageBuffer.set(imageData.data);
-    
-    console.log("Input buffer length",imageBuffer.length,"x",x,"y",y,"width",w,"height",h);
-
     let imageWidth = w;
     let imageHeight = h;
+    //console.log("Input buffer length",imageBuffer.length,"x",x,"y",y,"width",w,"height",h);
+    imageBuffer.set(imageData.data);
 
     if(x + w > screenWidth)
     {
@@ -353,16 +366,25 @@ function toScreenBuffer(imageData)
         }
     }
 }
-
+/**
+ * Creates a file from screenBuffer data
+ * @returns RGB565 Image
+ */
 function bitmapToFile()
 {
     const rgbBitmapData = convertRGBAtoRGB(screenBuffer);
     const rgb565Bitmap = convertBitmapTo16bit(rgbBitmapData);
+
     const outputImageBlob = new Blob([rgb565Bitmap]);
     const outputImage = new File([outputImageBlob], "output.bmp",{type:'image/bmp'});
+
     return outputImage;
 }
-
+/**
+ * Converts ImageData from RGBA to RGB values by premultiplying alpha
+ * @param {ImageData} imageData RGBA values
+ * @returns RGB888
+ */
 function convertRGBAtoRGB(imageData)
 {
     const bitmapDataRgb = new Uint8ClampedArray(Math.ceil(imageData.length / 4) * 3);
@@ -374,7 +396,7 @@ function convertRGBAtoRGB(imageData)
       const b = imageData[i + 2];
 
       const alpha = imageData[i + 3] / 255;
-      //black background
+      // Premultiplying alpha with "black" color as background. Use (1 - alpha) * 255) for white.
       bitmapDataRgb[j]     = Math.round((1 - alpha) * 0) + (alpha * r);
       bitmapDataRgb[j + 1] = Math.round((1 - alpha) * 0) + (alpha * g);
       bitmapDataRgb[j + 2] = Math.round((1 - alpha) * 0) + (alpha * b);
@@ -383,7 +405,11 @@ function convertRGBAtoRGB(imageData)
     }
     return bitmapDataRgb;
 }
-
+/**
+ * Converts RGB888 image data to RGB565
+ * @param {Uint8ClampedArray} bitmapDataRgb RGB888 image data 
+ * @returns RGB565 image data
+ */
 function convertBitmapTo16bit(bitmapDataRgb)
 {
     const rgb565Bitmap = new Uint16Array(Math.ceil(bitmapDataRgb.length / 3));
@@ -401,7 +427,11 @@ function convertBitmapTo16bit(bitmapDataRgb)
     }
     return rgb565Bitmap;
 }
-
+/**
+ * Converts RGB color depth from 888 to 565
+ * @param {*} color24 RGB888 color
+ * @returns RGB565 color
+ */
 function convert24to16(color24)
 {
     const r = parseInt(color24.slice(1, 3), 16);
@@ -418,7 +448,11 @@ function convert24to16(color24)
 
     return color565;
 }
-
+/**
+ * Converts RGB color depth from 565 to 888
+ * @param {*} color16 RGB565 color
+ * @returns RGB888 color
+ */
 function convert16to24(color16) 
 {
     let r5 = (color16 & 0b1111100000000000) >> 11;
@@ -542,7 +576,7 @@ class Pixel
 
 function drawPixel(x,y,c)
 {
-    if(x >= 0 && x <= screenWidth && y >= 0 && y < screenHeight)
+    if(x < screenWidth && y < screenHeight)
     {
         grid[y][x] = new Pixel(x, y, c);
         grid[y][x].show(); 
@@ -559,13 +593,19 @@ function fillRect(x,y,w,h,c)
         }
     }
 }
-
+/**
+ * Clears preview screen and 
+ * empties the screenBuffer
+ */
 function fillScreen()
 {
-    screenBuffer.fill(0); //clearing screen buffer
+    screenBuffer.fill(0);
     fillRect(0,0,screenWidth,screenHeight,0);
 }
-
+/**
+ * Clears LED matrix by sending empty text
+ * rectangle filled with black background
+ */
 function clearScreen()
 {
     let scrnClr = {
@@ -583,7 +623,7 @@ function clearScreen()
     displayTextValue[0].control(JSON.stringify(scrnClr));
 }
 
-function drawChar(char, x, y, tSize, c)
+function* drawChar(char, x, y, tSize, c)
 {
     if (char === undefined || char === null) {
         console.error("Invalid value for 'char' parameter", char);
@@ -599,7 +639,7 @@ function drawChar(char, x, y, tSize, c)
         {
             if(chr & 1)
             {
-                if(tSize==1)
+                if(tSize === 1)
                 {
                     drawPixel(x+i,y+j, c);
                 }
@@ -625,14 +665,14 @@ function drawText({x=0,y=0,text="",w=0,h=0,tColor=0,bColor=0,tSize=1,drawBG=true
 
     for(const i of charArray)
     {
-        //make new line if current char count exeeds the line limit OR if current char is a newline
+        //make new line if current char count exeeds line limit OR if current char is a newline
         if(charCount === lineCharLimit || i === '\n')
         {
             y+=charHeight * tSize;
             x=startXPos;
             charCount = 0;
             
-            if(i === '\n') //skip the loop to not reserve blank space on screen
+            if(i === '\n') //skip the loop to not draw blank space on newline char
             {
                 continue;
             }
@@ -698,7 +738,12 @@ function drawRGBBitmap({x=0,y=0,bitmap,w=0,h=0})
         }
     }
 }
-
+/**
+ * Draws already converted RGB565 bitmap by converting 
+ * colors back to RGB888.
+ * 
+ * @param {object} bitmap settings 
+ */
 function drawRGB565Bitmap({x=0,y=0,bitmap,w=0,h=0})
 {
     for(let j = 0; j < h; j++, y++)
