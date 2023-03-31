@@ -298,6 +298,7 @@ async function resizeImage(inputImageBlob)
     {
         resizeWidth: targetWidth,
         resizeHeight: targetHeight,
+        resizeQuality: "medium",
     });
 
     ctx.drawImage(targetSizeBitmap, 0, 0);
@@ -319,6 +320,7 @@ async function resizeImageToScreenBlob(inputImageBlob)
     {
       resizeWidth: screenWidth,
       resizeHeight: screenHeight,
+      resizeQuality: "medium",
     });
   
     ctx.drawImage(screenSizeBitmap, 0, 0, screenWidth, screenHeight);
