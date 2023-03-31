@@ -632,7 +632,7 @@ function clearScreen()
     displayTextValue[0].control(JSON.stringify(scrnClr));
 }
 
-function* drawChar(char, x, y, tSize, c)
+function drawChar(char, x, y, tSize, c)
 {
     if (char === undefined || char === null) {
         console.error("Invalid value for 'char' parameter", char);
